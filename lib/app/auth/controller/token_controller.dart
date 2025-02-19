@@ -6,18 +6,18 @@ import 'package:http/http.dart' as http;
 import 'package:get/get.dart';
 import '../view/login_page.dart';
 
-Future<void> storeTokens(String accessToken, int expiresIn) async {
+Future<void> storeTokens(String accessToken) async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
 
-  // Get the current time
-  DateTime now = DateTime.now();
-
-  // Calculate the expiration time of the access token
-  DateTime expiryTime = now.add(Duration(seconds: expiresIn));
+  // // Get the current time
+  // DateTime now = DateTime.now();
+  //
+  // // Calculate the expiration time of the access token
+  // DateTime expiryTime = now.add(Duration(seconds: expiresIn));
 
   // Store tokens and expiration time
   await prefs.setString('access_token', accessToken);
-  await prefs.setString('access_token_expiry', expiryTime.toIso8601String());
+  // await prefs.setString('access_token_expiry', expiryTime.toIso8601String());
 }
 
 Future<bool> isTokenExpired() async {
@@ -59,10 +59,10 @@ Future<String?> refreshAccessToken() async {
   if (response.statusCode == 200) {
     var responseData = jsonDecode(response.body);
     String newAccessToken = responseData['access_token'];
-    int expiresIn = responseData['expires_in'];
+    // int expiresIn = responseData['expires_in'];
 
     // Store the new access token and expiration time
-    await storeTokens(newAccessToken, expiresIn);
+    await storeTokens(newAccessToken);
 
     print("Access token refreshed successfully.");
     return newAccessToken; // Return the new access token

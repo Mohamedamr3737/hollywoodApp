@@ -48,7 +48,7 @@ class LoginController extends GetxController {
           var data = jsonDecode(response.body);
           String accessToken = data['access_token'];
           // Store the tokens and expiration time
-          await storeTokens(accessToken, 3600);
+          await storeTokens(accessToken);
 
           String? tokk = await getAccessToken();
 

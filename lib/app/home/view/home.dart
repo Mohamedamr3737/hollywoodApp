@@ -3,13 +3,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:s_medi/about/about.dart';
-import 'package:s_medi/app/auth/view/MyServicesPage.dart';
+// import 'package:s_medi/app/auth/view/MyServicesPage.dart';
 import 'package:s_medi/app/home/view/ShopView.dart';
 import 'package:s_medi/app/home/view/home_screen.dart'; // Assuming this is the main home screen widget
 import 'package:s_medi/general/consts/colors.dart';
 
 // Ensure the following imports are correct based on your file structure
 import 'package:s_medi/serv/servicespage.dart';
+import './MySessionsPage.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});

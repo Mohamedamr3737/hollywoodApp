@@ -1,21 +1,21 @@
-// ignore_for_file: unused_import
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:s_medi/app/auth/view/MyServicesPage.dart';
 import 'package:s_medi/app/home/view/AppointmentsPage.dart';
 import 'package:s_medi/app/home/view/BalancePage.dart';
 import 'package:s_medi/app/home/view/MyOrderPage.dart';
 import 'package:s_medi/app/home/view/PrescriptionPage.dart';
 import 'package:s_medi/app/home/view/ProfilePage.dart';
 import 'package:s_medi/app/home/view/SpecialOffersPage.dart';
+import './MySessionsPage.dart';
 
-// Define your HomePage with the same UI structure
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
       body: Column(
         children: [
@@ -26,16 +26,16 @@ class HomePage extends StatelessWidget {
               // Upper background image
               Image.network(
                 'https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcRElHzS7DF6u04X-Y0OPLE2YkIIcaI6XjbB5K5atLN_ZCPg_Un9',
-                height: 200,
+                height: screenHeight * 0.25, // 25% of screen height
                 width: double.infinity,
                 fit: BoxFit.cover,
               ),
               // Circle profile icon
               Positioned(
-                bottom: -50,
+                bottom: -screenHeight * 0.06, // Adjust based on screen size
                 child: Container(
-                  width: 140,
-                  height: 140,
+                  width: screenWidth * 0.35, // 35% of screen width
+                  height: screenWidth * 0.35,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: Colors.white,
@@ -56,56 +56,63 @@ class HomePage extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 60),
+          SizedBox(height: screenHeight * 0.08), // Adjust spacing dynamically
           // Grid of clickable options
           Expanded(
             child: GridView.count(
               crossAxisCount: 2,
-              padding: const EdgeInsets.all(16.0),
-              crossAxisSpacing: 16.0,
-              mainAxisSpacing: 16.0,
+              padding: EdgeInsets.all(screenWidth * 0.04), // Scalable padding
+              crossAxisSpacing: screenWidth * 0.04,
+              mainAxisSpacing: screenHeight * 0.03,
               children: [
                 _buildOption(
                   context,
                   "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcTrKVYM6Ttou8JcXZUDH5MJfUpVg4up-jZUUxeHiu-QQpcRtsd7",
                   "My Profile",
                   const ProfilePage(),
+                  screenWidth,
                 ),
                 _buildOption(
                   context,
                   "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcSQyZNKxW9s5lEyrUlJKYIsVKzT4dbuLWHyNIhrO00viFluxBwZ",
                   "My Sessions",
                   const MySessionsPage(),
+                  screenWidth,
                 ),
                 _buildOption(
                   context,
                   "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRJvshuC7e14u93nb1z_g4S1kvAIm86R0gQF-Zq4Iwq6-fZL4eY",
                   "Appointments",
                   const AppointmentsPage(),
+                  screenWidth,
                 ),
                 _buildOption(
                   context,
                   "https://encrypted-tbn2.gstatic.com/images?q=tbn:ANd9GcT5-LAPHBq67t8jlkeQ3IkUcNbPVuvQvt8R7dQUxqG1eTbKiRJa",
                   "My Balance",
                   const MyBalancePage(),
+                  screenWidth,
                 ),
                 _buildOption(
                   context,
                   "https://encrypted-tbn2.gstatic.com/images?q=tbn:ANd9GcTE99tUgRwxcKQAWpnqMpWk69e2CvXj0NMIF6Img4DiU3pPsi0X",
                   "Special Offers",
                   const SpecialOffersPage(),
+                  screenWidth,
                 ),
                 _buildOption(
                   context,
                   "https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcRXi5xyC8STTuAtazhR44tMHwxldphRmj9zzNRtK9X23n-_p93k",
                   "My Order",
                   const MyOrderPage(),
+                  screenWidth,
                 ),
                 _buildOption(
                   context,
                   "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcTusZ1LSpUqvBE3uLFQ3Y9oxEGt8nck4oJRRE3hm5xJEfs9F-An",
                   "Prescription",
                   const PrescriptionPage(),
+                  screenWidth,
                 ),
               ],
             ),
@@ -115,9 +122,11 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  // Build each icon option
-  Widget _buildOption(
-      BuildContext context, String imageUrl, String label, Widget page) {
+  // Build each icon option with scalable sizing
+  Widget _buildOption(BuildContext context, String imageUrl, String label, Widget page, double screenWidth) {
+    double iconSize = screenWidth * 0.3; // 30% of screen width for icons
+    double fontSize = screenWidth * 0.04; // 4% of screen width for text
+
     return GestureDetector(
       onTap: () {
         // Navigate to the corresponding page
@@ -127,8 +136,8 @@ class HomePage extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 130,
-            height: 130,
+            width: iconSize,
+            height: iconSize,
             decoration: BoxDecoration(
               color: Colors.black,
               shape: BoxShape.circle,
@@ -148,8 +157,8 @@ class HomePage extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             label,
-            style: const TextStyle(
-              fontSize: 16,
+            style: TextStyle(
+              fontSize: fontSize,
               fontWeight: FontWeight.bold,
               color: Colors.black,
             ),
