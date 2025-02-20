@@ -1,6 +1,9 @@
-// ignore_for_file: file_names, prefer_const_constructors, prefer_const_literals_to_create_immutables
-
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import '../controller/AppointmentsController.dart';
+import 'MyAppointmentsPage.dart';
+import 'RequestAppointment.dart';
+import 'AppointmentDetailsPage.dart';
 
 class AppointmentsPage extends StatefulWidget {
   const AppointmentsPage({Key? key}) : super(key: key);
@@ -12,15 +15,65 @@ class AppointmentsPage extends StatefulWidget {
 class _AppointmentsPageState extends State<AppointmentsPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  List<Map<String, String>> _appointments = [];
+  bool _isLoading = false; // Local loading flag
 
-  // List to store appointments
-  List<Map<String, String>> appointments = [];
+  final AppointmentsController appointmentsController =
+  Get.put(AppointmentsController());
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this); // Two tabs
+    _tabController = TabController(length: 2, vsync: this);
+    _loadAppointments();
   }
+
+  Future<void> _loadAppointments() async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      final fetchedAppointments =
+      await appointmentsController.fetchAppointments();
+      setState(() {
+        _appointments = fetchedAppointments;
+      });
+    } catch (e) {
+      print("Error fetching appointments: $e");
+      // Optionally, show a SnackBar with the error.
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _goToAppointmentPreview(Map<String, String> appointment) async {
+    final result = await Navigator.push<Map<String, String>>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AppointmentDetailPage(appointment: appointment),
+      ),
+    );
+
+    if (result != null) {
+      if (result['action'] == 'cancel') {
+        // Appointment was canceled; refresh from the API
+        _loadAppointments();
+      } else {
+        // Appointment was edited; update local list if needed
+        setState(() {
+          final index = _appointments.indexWhere(
+                (appt) => appt['id'] == result['id'],
+          );
+          if (index != -1) {
+            _appointments[index] = result;
+          }
+        });
+      }
+    }
+  }
+
 
   @override
   void dispose() {
@@ -31,27 +84,24 @@ class _AppointmentsPageState extends State<AppointmentsPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // Using a Stack to build custom background, circular icon, and AppBar.
       body: Stack(
         children: [
-          // Background image with AppBar overlay
+          // (1) Background image.
           Column(
             children: [
-              Container(
+              SizedBox(
                 width: double.infinity,
                 height: 200,
-                decoration: const BoxDecoration(
-                  image: DecorationImage(
-                    image: NetworkImage(
-                      'https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcRElHzS7DF6u04X-Y0OPLE2YkIIcaI6XjbB5K5atLN_ZCPg_Un9',
-                    ),
-                    fit: BoxFit.cover,
-                  ),
+                child: Image.network(
+                  'https://images.unsplash.com/photo-1601984845798-44b10f90c361?ixlib=rb-4.0.3&q=80&w=1400',
+                  fit: BoxFit.cover,
                 ),
               ),
-              const SizedBox(height: 100), // Space for circular profile image
+              const SizedBox(height: 100),
             ],
           ),
-          // Positioned Circular Image
+          // (2) Positioned circular lotus icon.
           Positioned(
             top: 140,
             left: MediaQuery.of(context).size.width / 2 - 70,
@@ -68,21 +118,21 @@ class _AppointmentsPageState extends State<AppointmentsPage>
                     offset: const Offset(0, 4),
                   ),
                 ],
-                image: const DecorationImage(
-                  image: NetworkImage(
-                    'https://encrypted-tbn2.gstatic.com/images?q=tbn:ANd9GcSEa7ew_3UY_z3gT_InqdQmimzJ6jC3n2WgRpMUN9yekVsUxGIg', // Replace with actual profile image URL
-                  ),
-                  fit: BoxFit.cover,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Image.network(
+                  'https://cdn3.iconfinder.com/data/icons/zen-2/100/Lotus_5-512.png',
+                  color: Colors.black87,
                 ),
               ),
             ),
           ),
-          // Content
+          // (3) Positioned content: Tabs and Tab Views.
           Positioned.fill(
             top: 280,
             child: Column(
               children: [
-                // Tabs Header
                 TabBar(
                   controller: _tabController,
                   indicatorColor: Colors.orangeAccent,
@@ -97,21 +147,25 @@ class _AppointmentsPageState extends State<AppointmentsPage>
                   child: TabBarView(
                     controller: _tabController,
                     children: [
-                      MyAppointmentsPage(appointments: appointments),
-                      RequestAppointmentPage(onAppointmentAdded: (appointment) {
-                        setState(() {
-                          appointments.add(appointment);
-                        });
-                        _tabController
-                            .animateTo(0); // Navigate to My Appointments
-                      }),
+                      MyAppointmentsPage(
+                        appointments: _appointments,
+                        onTapAppointment: (appointment) {
+                          _goToAppointmentPreview(appointment);
+                        },
+                      ),
+                      RequestAppointmentPage(
+                        onAppointmentAdded: (appointmentData) {
+                          _loadAppointments();
+                          _tabController.animateTo(0);
+                        },
+                      ),
                     ],
                   ),
                 ),
               ],
             ),
           ),
-          // Custom AppBar
+          // (4) Custom AppBar at the top.
           Positioned(
             top: 0,
             left: 0,
@@ -121,9 +175,7 @@ class _AppointmentsPageState extends State<AppointmentsPage>
               elevation: 0,
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back, color: Colors.orangeAccent),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
+                onPressed: () => Navigator.of(context).pop(),
               ),
               title: const Text(
                 "Appointments",
@@ -136,215 +188,20 @@ class _AppointmentsPageState extends State<AppointmentsPage>
               centerTitle: true,
             ),
           ),
+          // (5) Loading overlay (shows circular progress indicator).
+          if (_isLoading)
+            Positioned.fill(
+              child: Container(
+                color: Colors.black.withOpacity(0.5),
+                child: const Center(
+                  child: CircularProgressIndicator(
+                    color: Colors.orangeAccent,
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
-    );
-  }
-}
-
-// My Appointments Page
-class MyAppointmentsPage extends StatelessWidget {
-  final List<Map<String, String>> appointments;
-
-  const MyAppointmentsPage({Key? key, required this.appointments})
-      : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return appointments.isEmpty
-        ? Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Center(
-                child: Icon(
-                  Icons.event_note,
-                  size: 150,
-                  color: Colors.grey,
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                "Empty Appointments!",
-                style: TextStyle(
-                  fontSize: 30,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-            ],
-          )
-        : ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: appointments.length,
-            itemBuilder: (context, index) {
-              final appointment = appointments[index];
-              return Card(
-                margin: const EdgeInsets.only(bottom: 16),
-                child: ListTile(
-                  title: Text("Service: ${appointment['service']}"),
-                  subtitle: Text(
-                      "Doctor: ${appointment['doctor']}\nDate: ${appointment['date']}"),
-                  trailing: Text("Time: ${appointment['time']}"),
-                ),
-              );
-            },
-          );
-  }
-}
-
-// Request Appointment Page
-class RequestAppointmentPage extends StatefulWidget {
-  final Function(Map<String, String>) onAppointmentAdded;
-
-  const RequestAppointmentPage({Key? key, required this.onAppointmentAdded})
-      : super(key: key);
-
-  @override
-  State<RequestAppointmentPage> createState() => _RequestAppointmentPageState();
-}
-
-class _RequestAppointmentPageState extends State<RequestAppointmentPage> {
-  String? selectedBranch;
-  String? selectedDepartment;
-  String? selectedService;
-  String? selectedDoctor;
-  String? selectedDate;
-  String? selectedTime;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: ListView(
-        children: [
-          _buildDropdownField("Branch", ["Heliopolis"],
-              (value) => setState(() => selectedBranch = value)),
-          const SizedBox(height: 16),
-          _buildDropdownField(
-              "Department",
-              ["Skin Care", "Slimming", "Beauty", "Nutrition"],
-              (value) => setState(() => selectedDepartment = value)),
-          const SizedBox(height: 16),
-          _buildDropdownField(
-              "Service",
-              ["First Nutrition", "Nutrition follow up"],
-              (value) => setState(() => selectedService = value)),
-          const SizedBox(height: 16),
-          _buildDropdownField("Doctor", [""],
-              (value) => setState(() => selectedDoctor = value)),
-          const SizedBox(height: 16),
-          _buildDateField(
-              context, "Date", (value) => setState(() => selectedDate = value)),
-          const SizedBox(height: 16),
-          _buildTimeField(
-              context, "Time", (value) => setState(() => selectedTime = value)),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.black,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            ),
-            onPressed: () {
-              if (selectedBranch != null &&
-                  selectedDepartment != null &&
-                  selectedService != null &&
-                  selectedDoctor != null &&
-                  selectedDate != null &&
-                  selectedTime != null) {
-                widget.onAppointmentAdded({
-                  'branch': selectedBranch!,
-                  'department': selectedDepartment!,
-                  'service': selectedService!,
-                  'doctor': selectedDoctor!,
-                  'date': selectedDate!,
-                  'time': selectedTime!,
-                });
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                    content: Text("Appointment Confirmed Successfully")));
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Please fill in all fields")));
-              }
-            },
-            child: const Text(
-              "Confirm Appointment",
-              style:
-                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDropdownField(
-      String label, List<String> options, ValueChanged<String?> onChanged) {
-    return DropdownButtonFormField<String>(
-      decoration: InputDecoration(
-        labelText: label,
-        filled: true,
-        fillColor: Colors.grey[200],
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-      items: options
-          .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-          .toList(),
-      onChanged: onChanged,
-    );
-  }
-
-  Widget _buildDateField(
-      BuildContext context, String label, ValueChanged<String> onSelected) {
-    return TextFormField(
-      decoration: InputDecoration(
-        labelText: label,
-        filled: true,
-        fillColor: Colors.grey[200],
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-      readOnly: true,
-      onTap: () async {
-        DateTime? pickedDate = await showDatePicker(
-          context: context,
-          initialDate: DateTime.now(),
-          firstDate: DateTime(2000),
-          lastDate: DateTime(2101),
-        );
-        if (pickedDate != null) {
-          onSelected(pickedDate.toIso8601String().split('T').first);
-        }
-      },
-    );
-  }
-
-  Widget _buildTimeField(
-      BuildContext context, String label, ValueChanged<String> onSelected) {
-    return TextFormField(
-      decoration: InputDecoration(
-        labelText: label,
-        filled: true,
-        fillColor: Colors.grey[200],
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-      readOnly: true,
-      onTap: () async {
-        TimeOfDay? pickedTime = await showTimePicker(
-          context: context,
-          initialTime: TimeOfDay.now(),
-        );
-        if (pickedTime != null) {
-          onSelected("${pickedTime.hour}:${pickedTime.minute}");
-        }
-      },
     );
   }
 }

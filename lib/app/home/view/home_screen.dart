@@ -7,6 +7,9 @@ import 'package:s_medi/app/home/view/PrescriptionPage.dart';
 import 'package:s_medi/app/home/view/ProfilePage.dart';
 import 'package:s_medi/app/home/view/SpecialOffersPage.dart';
 import './MySessionsPage.dart';
+import 'package:s_medi/app/home/view/mydata.dart';
+import 'package:s_medi/app/home/view/request.dart';
+
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -104,7 +107,7 @@ class HomePage extends StatelessWidget {
                   context,
                   "https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcRXi5xyC8STTuAtazhR44tMHwxldphRmj9zzNRtK9X23n-_p93k",
                   "My Order",
-                  const MyOrderPage(),
+                  const MyOrdersPage(),
                   screenWidth,
                 ),
                 _buildOption(
@@ -112,6 +115,20 @@ class HomePage extends StatelessWidget {
                   "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcTusZ1LSpUqvBE3uLFQ3Y9oxEGt8nck4oJRRE3hm5xJEfs9F-An",
                   "Prescription",
                   const PrescriptionPage(),
+                  screenWidth,
+                ),
+                _buildOption(
+                  context,
+                  "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcTusZ1LSpUqvBE3uLFQ3Y9oxEGt8nck4oJRRE3hm5xJEfs9F-An",
+                  "My Data",
+                  const MyDataPage(),
+                  screenWidth,
+                ),
+                _buildOption(
+                  context,
+                  "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcTusZ1LSpUqvBE3uLFQ3Y9oxEGt8nck4oJRRE3hm5xJEfs9F-An",
+                  "My Requests",
+                  const MyRequestsPage(category: '',),
                   screenWidth,
                 ),
               ],

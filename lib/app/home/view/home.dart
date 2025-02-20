@@ -27,7 +27,8 @@ class _HomeState extends State<Home> {
     ServicesPage(), // Services page
     AboutPage(), // About page
     const HomePage(), // Main home screen widget
-    const ShopView(), // Shop page
+    const HomePage(), // Main home screen widget
+    // const ProductsPage(), // Shop page
     const MySessionsPage(), // My Sessions page
   ];
 

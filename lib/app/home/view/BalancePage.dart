@@ -1,6 +1,11 @@
+// my_balance_page.dart
 // ignore_for_file: file_names, prefer_const_literals_to_create_immutables, prefer_const_constructors
 
 import 'package:flutter/material.dart';
+// Import your separate files:
+import 'SummaryTabBalance.dart';
+import 'PurshaseTabBalance.dart';
+import 'PaymentsTabBalance.dart';
 
 class MyBalancePage extends StatefulWidget {
   const MyBalancePage({Key? key}) : super(key: key);
@@ -16,7 +21,8 @@ class _MyBalancePageState extends State<MyBalancePage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this); // Three tabs
+    // We have three tabs: Summary, Purchase, Payments
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -25,14 +31,18 @@ class _MyBalancePageState extends State<MyBalancePage>
     super.dispose();
   }
 
+  // --------------------------------
+  // BUILD
+  // --------------------------------
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Column(
         children: [
-          // Background and AppBar
+          // -- (1) Background + Custom AppBar
           Stack(
             children: [
+              // Background image at the top
               Container(
                 height: 150,
                 decoration: const BoxDecoration(
@@ -44,6 +54,7 @@ class _MyBalancePageState extends State<MyBalancePage>
                   ),
                 ),
               ),
+              // Custom AppBar on top
               Positioned(
                 top: 0,
                 left: 0,
@@ -52,8 +63,7 @@ class _MyBalancePageState extends State<MyBalancePage>
                   backgroundColor: Colors.black.withOpacity(0.7),
                   elevation: 0,
                   leading: IconButton(
-                    icon: const Icon(Icons.arrow_back,
-                        color: Colors.orangeAccent),
+                    icon: const Icon(Icons.arrow_back, color: Colors.orangeAccent),
                     onPressed: () {
                       Navigator.of(context).pop();
                     },
@@ -72,19 +82,19 @@ class _MyBalancePageState extends State<MyBalancePage>
             ],
           ),
 
-          // Tab Bar with Dark Blue Background
+          // -- (2) Tab Bar (dark background)
           Container(
-            color: const Color.fromARGB(255, 0, 6, 16),
+            color: const Color(0xFF000610), // A dark color for contrast
             child: TabBar(
               controller: _tabController,
               indicator: const UnderlineTabIndicator(
-                borderSide: BorderSide(color: Colors.orangeAccent),
+                borderSide: BorderSide(color: Colors.orangeAccent, width: 2),
               ),
               labelColor: Colors.orangeAccent,
               unselectedLabelColor: Colors.white70,
               labelStyle: const TextStyle(
                 fontWeight: FontWeight.bold,
-                fontSize: 18, // Larger text size
+                fontSize: 18,
               ),
               tabs: const [
                 Tab(text: "Summary"),
@@ -93,19 +103,27 @@ class _MyBalancePageState extends State<MyBalancePage>
               ],
             ),
           ),
+
+          // -- (3) TabBarView
           Expanded(
             child: TabBarView(
               controller: _tabController,
               children: [
-                _buildSummaryTab(),
-                _buildPlaceholderTab("No Data!"),
-                _buildPlaceholderTab("No Data!"),
+                // Summary tab
+                buildSummaryTab(),
+
+                // Purchase tab
+                buildPurchaseTab(),
+
+                // Payments tab
+                buildPaymentsTab(),
               ],
             ),
           ),
-          // Pay Button
+
+          // -- (4) Pay Button pinned at the bottom
           Container(
-            width: double.infinity, // Make button span full width
+            width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -116,7 +134,12 @@ class _MyBalancePageState extends State<MyBalancePage>
                 ),
               ),
               onPressed: () {
-                // Handle Pay Button Logic
+                // Handle Pay Button logic
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Pay button clicked!"),
+                  ),
+                );
               },
               child: const Text(
                 "Pay",
@@ -129,93 +152,6 @@ class _MyBalancePageState extends State<MyBalancePage>
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildSummaryTab() {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.grey[200],
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  "Current Balance",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const Text(
-                  "0.0 EGP",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-          Expanded(
-            child: GridView.count(
-              crossAxisCount: 2,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-              children: [
-                _buildSummaryCard("Total Cost", "0.0 EGP"),
-                _buildSummaryCard("Total Discount", "0.0 EGP"),
-                _buildSummaryCard("After Discount", "0.0 EGP"),
-                _buildSummaryCard("Total Paid", "0.0 EGP"),
-                _buildSummaryCard("Total UnPaid", "0.0 EGP"),
-                _buildSummaryCard("Total Use", "0.0 EGP"),
-                _buildSummaryCard("Total UnUsed", "0.0 EGP"),
-                _buildSummaryCard("Refund", "0.0 EGP"),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSummaryCard(String title, String value) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPlaceholderTab(String message) {
-    return Center(
-      child: Text(
-        message,
-        style: const TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-          color: Colors.grey,
-        ),
       ),
     );
   }
