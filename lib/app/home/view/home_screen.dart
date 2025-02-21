@@ -93,7 +93,7 @@ class HomePage extends StatelessWidget {
                   context,
                   "https://encrypted-tbn2.gstatic.com/images?q=tbn:ANd9GcT5-LAPHBq67t8jlkeQ3IkUcNbPVuvQvt8R7dQUxqG1eTbKiRJa",
                   "My Balance",
-                  const MyBalancePage(),
+                  MyBalancePage(),
                   screenWidth,
                 ),
                 _buildOption(

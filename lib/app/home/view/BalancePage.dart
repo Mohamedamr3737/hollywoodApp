@@ -1,14 +1,11 @@
-// my_balance_page.dart
-// ignore_for_file: file_names, prefer_const_literals_to_create_immutables, prefer_const_constructors
-
 import 'package:flutter/material.dart';
-// Import your separate files:
-import 'SummaryTabBalance.dart';
+import 'package:get/get.dart';
+import '../controller/BalanceController.dart';
+import 'summarytabbalance.dart';
 import 'PurshaseTabBalance.dart';
-import 'PaymentsTabBalance.dart';
+import 'paymentstabbalance.dart';
 
 class MyBalancePage extends StatefulWidget {
-  const MyBalancePage({Key? key}) : super(key: key);
 
   @override
   State<MyBalancePage> createState() => _MyBalancePageState();
@@ -18,11 +15,18 @@ class _MyBalancePageState extends State<MyBalancePage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
+  // Instantiate the controller
+  final BalanceController balanceController = Get.put(BalanceController());
+
   @override
   void initState() {
     super.initState();
-    // We have three tabs: Summary, Purchase, Payments
     _tabController = TabController(length: 3, vsync: this);
+
+    // Fetch the purchases once the page initializes
+    balanceController.fetchPurchases();
+    balanceController.fetchPayments();
+    balanceController.fetchSummary();
   }
 
   @override
