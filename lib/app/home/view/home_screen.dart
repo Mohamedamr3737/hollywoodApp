@@ -8,7 +8,7 @@ import 'package:s_medi/app/home/view/ProfilePage.dart';
 import 'package:s_medi/app/home/view/SpecialOffersPage.dart';
 import './MySessionsPage.dart';
 import 'package:s_medi/app/home/view/mydata.dart';
-import 'package:s_medi/app/home/view/request.dart';
+import 'package:s_medi/app/home/view/SelectCategoryRequestPage.dart';
 
 
 class HomePage extends StatelessWidget {
@@ -128,7 +128,7 @@ class HomePage extends StatelessWidget {
                   context,
                   "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcTusZ1LSpUqvBE3uLFQ3Y9oxEGt8nck4oJRRE3hm5xJEfs9F-An",
                   "My Requests",
-                  const MyRequestsPage(category: '',),
+                  const SelectCategoryPage(),
                   screenWidth,
                 ),
               ],

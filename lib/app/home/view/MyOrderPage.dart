@@ -1,50 +1,26 @@
+// my_orders_page.dart
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import '../controller/orders_controller.dart';
+import 'OrderDetailsPage.dart';
 
-void main() {
-  runApp(const MyApp());
-}
-
-// The root widget
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'My Orders Demo',
-      debugShowCheckedModeBanner: false,
-      home: const MyOrdersPage(),
-    );
-  }
-}
-
-// -----------------------------------------
-// MyOrdersPage
-// -----------------------------------------
 class MyOrdersPage extends StatefulWidget {
-  const MyOrdersPage({super.key});
+  const MyOrdersPage({Key? key}) : super(key: key);
 
   @override
   State<MyOrdersPage> createState() => _MyOrdersPageState();
 }
 
 class _MyOrdersPageState extends State<MyOrdersPage> {
-  // Example list of orders. Each is a Map with:
-  // {
-  //   'orderNum': '#1213',
-  //   'status': 'Completed',
-  //   'total': 0.00,
-  //   'date': '2025-02-19'
-  // }
-  // If you want to test the “No Orders” UI, set this to an empty list: []
-  final List<Map<String, dynamic>> _orders = [
-    {
-      'orderNum': '#1213',
-      'status': 'Completed',
-      'total': 0.00,
-      'date': '2025-02-19',
-    },
-  ];
+  // We use OrdersController
+  final OrdersController ordersController = Get.put(OrdersController());
+
+  @override
+  void initState() {
+    super.initState();
+    // Fetch orders from the server
+    ordersController.fetchOrders();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -70,6 +46,7 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
               const SizedBox(height: 60),
             ],
           ),
+
           // (2) Positioned Circular Logo
           Positioned(
             top: 100, // Adjust as needed
@@ -80,7 +57,6 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: Colors.white,
-                // Replace this with your own logo if desired:
                 image: const DecorationImage(
                   image: NetworkImage(
                     'https://cdn3.iconfinder.com/data/icons/zen-2/100/Lotus_5-512.png',
@@ -97,6 +73,7 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
               ),
             ),
           ),
+
           // (3) Custom AppBar on top
           Positioned(
             top: 0,
@@ -122,33 +99,51 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
               centerTitle: true,
             ),
           ),
+
           // (4) Content below the circle
           Positioned.fill(
             top: 200, // so it appears below the circle
-            child: _orders.isEmpty
-                ? _buildNoOrdersUI()
-                : _buildOrdersList(),
+            child: Obx(() {
+              // 1) If loading, show spinner
+              if (ordersController.isLoading.value) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              // 2) If there's an error
+              if (ordersController.errorMessage.isNotEmpty) {
+                return Center(
+                  child: Text(
+                    ordersController.errorMessage.value,
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                );
+              }
+              // 3) Otherwise, show the orders
+              final orders = ordersController.orders;
+              if (orders.isEmpty) {
+                return _buildNoOrdersUI();
+              } else {
+                return _buildOrdersList(orders);
+              }
+            }),
           ),
         ],
       ),
     );
   }
 
-  // -----------------------------------------
   // If there are no orders, show "No Orders"
-  // -----------------------------------------
   Widget _buildNoOrdersUI() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
+        children: const [
+          Icon(
             Icons.shopping_cart,
             size: 100,
             color: Colors.grey,
           ),
-          const SizedBox(height: 20),
-          const Text(
+          SizedBox(height: 20),
+          Text(
             "No Orders",
             style: TextStyle(
               fontSize: 24,
@@ -156,8 +151,8 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
               color: Colors.black87,
             ),
           ),
-          const SizedBox(height: 10),
-          const Text(
+          SizedBox(height: 10),
+          Text(
             "You have no orders yet.",
             style: TextStyle(
               fontSize: 16,
@@ -169,19 +164,17 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
     );
   }
 
-  // -----------------------------------------
   // If there are orders, show them in a list
-  // -----------------------------------------
-  Widget _buildOrdersList() {
+  Widget _buildOrdersList(List<Map<String, dynamic>> orders) {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: _orders.length,
+      itemCount: orders.length,
       itemBuilder: (context, index) {
-        final order = _orders[index];
-        final orderNum = order['orderNum'] as String;
+        final order = orders[index];
+        final orderId = order['id']?.toString() ?? "";
         final status = order['status'] as String;
-        final total = order['total'] as double;
-        final date = order['date'] as String;
+        final totalStr = order['total']?.toString() ?? "0.00";
+        final dateStr = order['created_at'] as String? ?? "";
 
         return Container(
           margin: const EdgeInsets.only(bottom: 16),
@@ -193,12 +186,12 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Row: "Order Num #..." and "Completed"
+              // Row: "Order Num #..." and status
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    "Order Num $orderNum",
+                    "Order #$orderId",
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
@@ -212,7 +205,7 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                     ),
-                  ).withBackground(color: Colors.green),
+                  ).withBackground(color: _statusColor(status)),
                 ],
               ),
               const SizedBox(height: 8),
@@ -226,7 +219,7 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
                     style: TextStyle(fontSize: 16, color: Colors.black),
                   ),
                   Text(
-                    "EGP ${total.toStringAsFixed(2)}",
+                    "EGP $totalStr",
                     style: const TextStyle(
                       fontSize: 16,
                       color: Colors.black,
@@ -241,7 +234,7 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    date,
+                    dateStr,
                     style: const TextStyle(
                       fontSize: 14,
                       color: Colors.black54,
@@ -255,7 +248,7 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
                       ),
                     ),
                     onPressed: () {
-                      // Navigate to Order Details page
+                      // Navigate to Order Details page, pass the entire order map
                       Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (_) => OrderDetailsPage(order: order),
@@ -278,10 +271,24 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
       },
     );
   }
+
+  // Return a color for the status label
+  Color _statusColor(String status) {
+    switch (status.toLowerCase()) {
+      case "completed":
+        return Colors.green;
+      case "pending":
+        return Colors.blue;
+      case "canceled":
+      case "cancelled":
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
 }
 
-// Simple extension to wrap a widget in a colored container
-// for the “Completed” label background effect.
+// A small extension to wrap a widget in a colored container
 extension WidgetBackground on Widget {
   Widget withBackground({Color color = Colors.green}) {
     return Container(
@@ -291,216 +298,6 @@ extension WidgetBackground on Widget {
         borderRadius: BorderRadius.circular(8),
       ),
       child: this,
-    );
-  }
-}
-
-// -----------------------------------------
-// OrderDetailsPage
-// -----------------------------------------
-class OrderDetailsPage extends StatelessWidget {
-  final Map<String, dynamic> order;
-
-  const OrderDetailsPage({super.key, required this.order});
-
-  @override
-  Widget build(BuildContext context) {
-    final orderNum = order['orderNum'] ?? '';
-    final status = order['status'] ?? '';
-    final total = order['total'] ?? 0.0;
-    final date = order['date'] ?? '';
-
-    return Scaffold(
-      body: Stack(
-        children: [
-          // Top background image
-          Column(
-            children: [
-              SizedBox(
-                height: 150,
-                width: double.infinity,
-                child: Image.network(
-                  'https://images.unsplash.com/photo-1601984845798-44b10f90c361?ixlib=rb-4.0.3&q=80&w=1400',
-                  fit: BoxFit.cover,
-                ),
-              ),
-              const SizedBox(height: 60),
-            ],
-          ),
-          // Circle logo (or lotus)
-          Positioned(
-            top: 100,
-            left: MediaQuery.of(context).size.width / 2 - 50,
-            child: Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white,
-                image: const DecorationImage(
-                  image: NetworkImage(
-                    'https://cdn3.iconfinder.com/data/icons/zen-2/100/Lotus_5-512.png',
-                  ),
-                  fit: BoxFit.contain,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          // Custom app bar
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: AppBar(
-              backgroundColor: Colors.black.withOpacity(0.7),
-              elevation: 0,
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.orangeAccent),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-              title: Text(
-                "Order Details $orderNum",
-                style: const TextStyle(
-                  color: Colors.orangeAccent,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              centerTitle: true,
-            ),
-          ),
-          // Content
-          Positioned.fill(
-            top: 200,
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    // Status and date in a row
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          status,
-                          style: const TextStyle(
-                            color: Colors.orangeAccent,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        Text(
-                          date.toString(),
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // "Items" label
-                    Row(
-                      children: const [
-                        Text(
-                          "Items",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-
-                    // Example item card
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: ListTile(
-                        leading: Container(
-                          width: 50,
-                          height: 50,
-                          decoration: const BoxDecoration(
-                            image: DecorationImage(
-                              image: NetworkImage(
-                                // Example image of a product:
-                                'https://via.placeholder.com/100',
-                              ),
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
-                        title: const Text(".", // example product name
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        subtitle: const Text("1 x EGP 0.00"),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Some summary details
-                    _buildLabelValueRow("Quantity", "1"),
-                    const Divider(),
-                    _buildLabelValueRow("SubTotal", "EGP 1500.00"),
-                    const Divider(),
-                    _buildLabelValueRow("Discount", "EGP 1500.00"),
-                    const Divider(),
-                    _buildLabelValueRow(
-                      "Total",
-                      "EGP ${total.toStringAsFixed(2)}",
-                      isHighlight: true,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLabelValueRow(String label, String value, {bool isHighlight = false}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: isHighlight ? FontWeight.bold : FontWeight.w500,
-                color: isHighlight ? Colors.teal : Colors.grey[800],
-              )),
-          Text(value,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: isHighlight ? FontWeight.bold : FontWeight.w500,
-                color: isHighlight ? Colors.teal : Colors.black,
-              )),
-        ],
-      ),
     );
   }
 }

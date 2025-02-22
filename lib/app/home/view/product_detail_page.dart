@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'cart_page.dart';
 
 class ProductDetailPage extends StatefulWidget {
-  final Map<String, dynamic> product; // Each product is a Map
+  final Map<String, dynamic> product;
   const ProductDetailPage({Key? key, required this.product}) : super(key: key);
 
   @override
@@ -16,10 +16,11 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   @override
   Widget build(BuildContext context) {
     final product = widget.product;
-    final name = product["name"] as String;
-    final imageUrl = product["imageUrl"] as String;
+    final title = product["title"] as String;
+    final imageUrl = product["image"] as String;
     final price = product["price"] as double;
     final oldPrice = product["oldPrice"] as double?;
+    final canBuy = product["can_buy"] as bool;
 
     return Scaffold(
       appBar: AppBar(
@@ -33,7 +34,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 context,
                 MaterialPageRoute(builder: (_) => const CartPage()),
               );
-              setState(() {}); // refresh after returning
+              setState(() {});
             },
           ),
         ],
@@ -42,7 +43,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // (A) Product image (with placeholder if needed)
+            // Image
             if (imageUrl.isEmpty)
               const SizedBox(
                 width: 200,
@@ -65,15 +66,15 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               ),
             const SizedBox(height: 16),
 
-            // (B) Name
+            // Title
             Text(
-              name,
+              title,
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
 
-            // (C) Price row
+            // Price row
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -96,30 +97,28 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             ),
             const SizedBox(height: 16),
 
-            // (D) "Product Details" label
+            // "Product Details" label
             const Text(
               "Product Details",
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 4),
-            // Some dummy text (just using the product name)
+            // Show the product title as dummy "details"
             Text(
-              name,
+              title,
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 14),
             ),
             const SizedBox(height: 16),
 
-            // (E) Quantity row
+            // Quantity row
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 IconButton(
                   onPressed: _quantity > 1
                       ? () {
-                    setState(() {
-                      _quantity--;
-                    });
+                    setState(() => _quantity--);
                   }
                       : null,
                   icon: const Icon(Icons.remove_circle_outline),
@@ -130,9 +129,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 ),
                 IconButton(
                   onPressed: () {
-                    setState(() {
-                      _quantity++;
-                    });
+                    setState(() => _quantity++);
                   },
                   icon: const Icon(Icons.add_circle_outline),
                 ),
@@ -140,24 +137,25 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             ),
             const SizedBox(height: 16),
 
-            // (F) Add to cart button
+            // Add to cart button
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black,
+                backgroundColor: canBuy ? Colors.black : Colors.grey,
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
               ),
-              onPressed: () {
-                // Add to cart with chosen quantity
+              onPressed: canBuy
+                  ? () {
                 CartPage.addToCart(product, _quantity);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text("$name added to cart (x$_quantity)"),
+                    content: Text("$title added to cart (x$_quantity)"),
                   ),
                 );
-              },
+              }
+                  : null,
               child: const Text(
                 "Add to cart",
                 style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),

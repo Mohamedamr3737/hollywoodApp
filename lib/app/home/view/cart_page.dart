@@ -1,23 +1,19 @@
 // cart_page.dart
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'product_detail_page.dart';
+import '../controller/shop_controller.dart';
 
-/// A global static cart (list of Maps). Each item is:
-///   { "product": <productMap>, "quantity": <int> }
 class CartPage extends StatefulWidget {
   const CartPage({Key? key}) : super(key: key);
 
-  // The global cart list
   static final List<Map<String, dynamic>> cartItems = [];
 
-  /// Add an item to the cart. If the product already exists, increment quantity.
   static void addToCart(Map<String, dynamic> product, int quantity) {
-    // Check if product is already in the cart
-    final index = cartItems.indexWhere((item) => item["product"] == product);
+    final index = cartItems.indexWhere((item) => item["product"]["id"] == product["id"]);
     if (index >= 0) {
-      // Already in cart, just increment
       cartItems[index]["quantity"] += quantity;
     } else {
-      // Insert new item
       cartItems.add({
         "product": product,
         "quantity": quantity,
@@ -30,9 +26,13 @@ class CartPage extends StatefulWidget {
 }
 
 class _CartPageState extends State<CartPage> {
+  bool _isSending = false;
+
+  // Get the same ShopController instance
+  final ShopController shopController = Get.find<ShopController>();
+
   @override
   Widget build(BuildContext context) {
-    // Calculate totals
     double subTotal = 0.0;
     double discountTotal = 0.0;
     int totalQuantity = 0;
@@ -49,8 +49,7 @@ class _CartPageState extends State<CartPage> {
       }
       totalQuantity += quantity;
     }
-
-    double finalTotal = subTotal; // If there's more discount logic, apply it
+    final finalTotal = subTotal;
 
     return Scaffold(
       appBar: AppBar(
@@ -59,7 +58,7 @@ class _CartPageState extends State<CartPage> {
       ),
       body: Column(
         children: [
-          // (A) Cart list
+          // Cart list
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
@@ -70,8 +69,7 @@ class _CartPageState extends State<CartPage> {
               },
             ),
           ),
-
-          // (B) Summary at bottom
+          // Summary
           Container(
             color: Colors.grey[200],
             padding: const EdgeInsets.all(16),
@@ -106,22 +104,41 @@ class _CartPageState extends State<CartPage> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  ),
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Send to Order!")),
-                    );
-                  },
-                  child: const Text(
-                    "Send to Order",
-                    style: TextStyle(color: Colors.white),
+                    onPressed: CartPage.cartItems.isEmpty || _isSending
+                        ? null
+                        : () {
+                      _sendOrder();
+                    },
+                    child: _isSending
+                        ? Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          "Sending...",
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ],
+                    )
+                        : const Text(
+                      "Send to Order",
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ),
               ],
@@ -136,85 +153,117 @@ class _CartPageState extends State<CartPage> {
     final product = item["product"] as Map<String, dynamic>;
     final quantity = item["quantity"] as int;
 
-    final name = product["name"] as String;
+    final title = product["title"] as String;
     final price = product["price"] as double;
     final oldPrice = product["oldPrice"] as double?;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.orange[500],
-        borderRadius: BorderRadius.circular(12),
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          // A) Name + oldPrice + newPrice
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name.isEmpty ? "." : name,
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                ),
-                Row(
-                  children: [
-                    Text(
-                      "${price.toStringAsFixed(2)} EGP",
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    if (oldPrice != null) ...[
-                      const SizedBox(width: 8),
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => ProductDetailPage(product: product)),
+        ).then((_) => setState(() {}));
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: Colors.orange[500],
+          borderRadius: BorderRadius.circular(12),
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            // Title + price
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title.isEmpty ? "." : title,
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                  ),
+                  Row(
+                    children: [
                       Text(
-                        "${oldPrice.toStringAsFixed(2)} EGP",
-                        style: const TextStyle(
-                          decoration: TextDecoration.lineThrough,
-                          color: Colors.black54,
-                        ),
+                        "${price.toStringAsFixed(2)} EGP",
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
+                      if (oldPrice != null) ...[
+                        const SizedBox(width: 8),
+                        Text(
+                          "${oldPrice.toStringAsFixed(2)} EGP",
+                          style: const TextStyle(
+                            decoration: TextDecoration.lineThrough,
+                            color: Colors.black54,
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
+                ],
+              ),
+            ),
+            // Stepper
+            Row(
+              children: [
+                IconButton(
+                  onPressed: () {
+                    setState(() {
+                      if (quantity > 1) {
+                        item["quantity"] = quantity - 1;
+                      }
+                    });
+                  },
+                  icon: const Icon(Icons.remove_circle_outline),
+                ),
+                Text("$quantity"),
+                IconButton(
+                  onPressed: () {
+                    setState(() {
+                      item["quantity"] = quantity + 1;
+                    });
+                  },
+                  icon: const Icon(Icons.add_circle_outline),
                 ),
               ],
             ),
-          ),
-          // B) Quantity stepper
-          Row(
-            children: [
-              IconButton(
-                onPressed: () {
-                  setState(() {
-                    if (quantity > 1) {
-                      item["quantity"] = quantity - 1;
-                    }
-                  });
-                },
-                icon: const Icon(Icons.remove_circle_outline),
-              ),
-              Text("$quantity"),
-              IconButton(
-                onPressed: () {
-                  setState(() {
-                    item["quantity"] = quantity + 1;
-                  });
-                },
-                icon: const Icon(Icons.add_circle_outline),
-              ),
-            ],
-          ),
-          const SizedBox(width: 8),
-          // C) Remove button
-          IconButton(
-            onPressed: () {
-              setState(() {
-                CartPage.cartItems.remove(item);
-              });
-            },
-            icon: const Icon(Icons.close),
-          ),
-        ],
+            const SizedBox(width: 8),
+            // Remove
+            IconButton(
+              onPressed: () {
+                setState(() {
+                  CartPage.cartItems.remove(item);
+                });
+              },
+              icon: const Icon(Icons.close),
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  /// Calls shopController.storeOrder(...) to send the cart items to the server
+  Future<void> _sendOrder() async {
+    setState(() => _isSending = true);
+
+    final msg = await shopController.storeOrder(CartPage.cartItems);
+    // If msg starts with "Error:" or "Exception:", it's an error
+    if (msg.toLowerCase().contains("error") || msg.toLowerCase().contains("exception")) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg)),
+      );
+    } else {
+      // success
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg)),
+      );
+      // Optionally clear cart
+      setState(() {
+        CartPage.cartItems.clear();
+      });
+    }
+
+    setState(() => _isSending = false);
   }
 }

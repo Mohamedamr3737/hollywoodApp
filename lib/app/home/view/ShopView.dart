@@ -1,26 +1,10 @@
 // products_page.dart
+import 'dart:async'; // for Timer
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import '../controller/shop_controller.dart';
 import 'cart_page.dart';
 import 'product_detail_page.dart';
-
-// Dummy data for products. Each is a Map with keys:
-//   "name", "imageUrl", "price", "oldPrice", "inStock"
-final List<Map<String, dynamic>> dummyProducts = [
-  {
-    "name": "Post peel",
-    "imageUrl": "", // intentionally blank to show placeholder
-    "price": 0.0,
-    "oldPrice": 1000.0,
-    "inStock": true,
-  },
-  {
-    "name": "laroche posay laboratoire dermatologique serum",
-    "imageUrl": "https://via.placeholder.com/100x100.png?text=Serum",
-    "price": 1150.0,
-    "oldPrice": null,
-    "inStock": true,
-  },
-];
 
 class ProductsPage extends StatefulWidget {
   const ProductsPage({Key? key}) : super(key: key);
@@ -30,35 +14,48 @@ class ProductsPage extends StatefulWidget {
 }
 
 class _ProductsPageState extends State<ProductsPage> {
-  // Track which tab is selected: 0 = All, 1 = New Arrivals
-  int _selectedTab = 0;
+  final shopController = Get.put(ShopController());
+
+  // For local filter: "featured/hot/new" or "all"
+  String localFilter = "all";
+
+  // For search
+  final TextEditingController _searchCtrl = TextEditingController();
+  Timer? _debounce;
+
+  // For categories
+  int? selectedCategoryId; // if null => all categories
+
+  @override
+  void initState() {
+    super.initState();
+    // Fetch initial products page=1
+    shopController.fetchProducts(page: 1);
+    // Also fetch categories
+    shopController.fetchCategories();
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Top AppBar with "PRODUCTS" + Filter + Cart icons
       appBar: AppBar(
         title: const Text("PRODUCTS"),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.filter_list),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Filter clicked!")),
-              );
-            },
-          ),
           // Cart icon
           IconButton(
             icon: const Icon(Icons.shopping_cart),
             onPressed: () async {
-              // Navigate to cart page
               await Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const CartPage()),
               );
-              // After returning, refresh to show updated cart if needed
               setState(() {});
             },
           ),
@@ -66,40 +63,148 @@ class _ProductsPageState extends State<ProductsPage> {
       ),
       body: Column(
         children: [
-          // (A) Row with "All", "New Arrivals"
+          // (A) Search row (enhanced UI)
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              children: [
+                // Search field with a container + decoration
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    child: TextField(
+                      controller: _searchCtrl,
+                      onChanged: _onSearchChanged, // Debounce logic
+                      decoration: InputDecoration(
+                        hintText: "Search product title...",
+                        prefixIcon: const Icon(Icons.search),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Category dropdown
+                Obx(() {
+                  final cats = shopController.categories;
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    child: DropdownButton<int?>(
+                      value: selectedCategoryId,
+                      hint: const Text("All Cat", style: TextStyle(color: Colors.black)),
+                      underline: const SizedBox(), // remove default underline
+                      items: [
+                        // "All categories" item
+                        const DropdownMenuItem<int?>(
+                          value: null,
+                          child: Text("All Categories"),
+                        ),
+                        // Then real categories
+                        ...cats.map((c) {
+                          final catId = c["id"] as int;
+                          final catTitle = c["title"] as String;
+                          return DropdownMenuItem<int?>(
+                            value: catId,
+                            child: Text(catTitle),
+                          );
+                        }).toList(),
+                      ],
+                      onChanged: (val) {
+                        setState(() {
+                          selectedCategoryId = val;
+                        });
+                        // Re-fetch from server with new category
+                        _fetchFromServer(page: 1);
+                      },
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+
+          // (B) Local filter row for "All/Featured/Hot/New"
           Container(
             color: Colors.black,
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Row(
               children: [
-                _buildTabButton("All", 0),
-                _buildTabButton("New Arrivals", 1),
+                _buildLocalFilterButton("All", "all"),
+                _buildLocalFilterButton("Featured", "featured"),
+                _buildLocalFilterButton("Hot", "hot"),
+                _buildLocalFilterButton("New", "new"),
                 const Spacer(),
               ],
             ),
           ),
-          // (B) Expanded list of products
+
+          // (C) Product list area
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(8),
-              itemCount: dummyProducts.length,
-              itemBuilder: (context, index) {
-                final product = dummyProducts[index];
-                return _buildProductCard(context, product);
-              },
-            ),
+            child: Obx(() {
+              if (shopController.isLoading.value) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (shopController.errorMessage.isNotEmpty) {
+                return Center(
+                  child: Text(
+                    shopController.errorMessage.value,
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                );
+              }
+
+              final products = shopController.products;
+              if (products.isEmpty) {
+                return const Center(child: Text("No products found."));
+              }
+
+              // Apply local filter for "featured/hot/new"
+              final filtered = _applyLocalFilter(products);
+
+              return ListView.builder(
+                padding: const EdgeInsets.all(8),
+                itemCount: filtered.length,
+                itemBuilder: (context, index) {
+                  final product = filtered[index];
+                  return _buildProductCard(product);
+                },
+              );
+            }),
           ),
+
+          // (D) Pagination row
+          _buildPaginationRow(),
         ],
       ),
     );
   }
 
-  // A tab button for "All" or "New Arrivals"
-  Widget _buildTabButton(String label, int index) {
-    final isSelected = _selectedTab == index;
+  // (1) Debounce search
+  void _onSearchChanged(String val) {
+    // Cancel previous timer
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+
+    // Start a new timer
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      // After 500ms of no typing, fetch from server
+      _fetchFromServer(page: 1);
+    });
+  }
+
+  // (2) Build local filter button
+  Widget _buildLocalFilterButton(String label, String value) {
+    final isSelected = (localFilter == value);
     return TextButton(
       onPressed: () {
-        setState(() => _selectedTab = index);
+        setState(() => localFilter = value);
       },
       child: Text(
         label,
@@ -112,55 +217,69 @@ class _ProductsPageState extends State<ProductsPage> {
     );
   }
 
-  // A single product card, matching your black background + discount style
-  Widget _buildProductCard(BuildContext context, Map<String, dynamic> product) {
-    final name = product["name"] as String;
-    final imageUrl = product["imageUrl"] as String;
+  // (3) Apply local "featured/hot/new" filter
+  List<Map<String, dynamic>> _applyLocalFilter(List<Map<String, dynamic>> items) {
+    if (localFilter == "all") return items;
+
+    return items.where((p) {
+      if (localFilter == "featured") {
+        return p["featured"] == true;
+      } else if (localFilter == "hot") {
+        return p["hot"] == true;
+      } else if (localFilter == "new") {
+        return p["new"] == true;
+      }
+      return true;
+    }).toList();
+  }
+
+  // (4) Build a single product card
+  Widget _buildProductCard(Map<String, dynamic> product) {
+    final title = product["title"] as String;
+    final imageUrl = product["image"] as String;
     final price = product["price"] as double;
     final oldPrice = product["oldPrice"] as double?;
-    final inStock = product["inStock"] as bool;
+    final canBuy = product["can_buy"] as bool;
 
-    // Calculate discount % if oldPrice != null
     double discountPercentage = 0.0;
     if (oldPrice != null && oldPrice > price) {
       discountPercentage = 100.0 * (oldPrice - price) / oldPrice;
     }
+
+    // Also check if "featured", "hot", or "new" is true => show a label
+    final featured = product["featured"] == true;
+    final hot = product["hot"] == true;
+    final isNew = product["new"] == true;
 
     return Card(
       color: Colors.black,
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: InkWell(
         onTap: () {
-          // Navigate to product detail page
+          // Go to product detail
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (_) => ProductDetailPage(product: product),
-            ),
+            MaterialPageRoute(builder: (_) => ProductDetailPage(product: product)),
           );
         },
         child: Padding(
           padding: const EdgeInsets.all(8.0),
           child: Row(
             children: [
-              // (1) Product image (with placeholder if empty)
               _buildProductImage(imageUrl),
               const SizedBox(width: 8),
-              // (2) Name + Price + discount
+              // Title, price, discount, labels
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Name
                     Text(
-                      name,
+                      title,
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    // Price row
                     Row(
                       children: [
                         Text(
@@ -182,46 +301,85 @@ class _ProductsPageState extends State<ProductsPage> {
                         ],
                       ],
                     ),
-                    // (Optional) discount label
                     if (discountPercentage > 0)
                       Text(
-                        "${discountPercentage.toStringAsFixed(1)}% new",
+                        "${discountPercentage.toStringAsFixed(1)}% discount",
                         style: const TextStyle(
                           color: Colors.orangeAccent,
                           fontSize: 12,
                         ),
                       ),
+                    Row(
+                      children: [
+                        if (featured)
+                          Container(
+                            margin: const EdgeInsets.only(right: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.purple,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text(
+                              "Featured",
+                              style: TextStyle(color: Colors.white, fontSize: 10),
+                            ),
+                          ),
+                        if (hot)
+                          Container(
+                            margin: const EdgeInsets.only(right: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.redAccent,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text(
+                              "Hot",
+                              style: TextStyle(color: Colors.white, fontSize: 10),
+                            ),
+                          ),
+                        if (isNew)
+                          Container(
+                            margin: const EdgeInsets.only(right: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.blue,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text(
+                              "New",
+                              style: TextStyle(color: Colors.white, fontSize: 10),
+                            ),
+                          ),
+                      ],
+                    ),
                   ],
                 ),
               ),
               const SizedBox(width: 8),
-              // (3) Stock label + "Add to cart"
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  // Stock label
                   Text(
-                    inStock ? "In Stock" : "Out of Stock",
+                    canBuy ? "In Stock" : "Out of Stock",
                     style: TextStyle(
-                      color: inStock ? Colors.green : Colors.red,
+                      color: canBuy ? Colors.green : Colors.red,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  // "Add to cart" button
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black,
-                      side: const BorderSide(color: Colors.orangeAccent),
+                      backgroundColor: canBuy ? Colors.black : Colors.grey,
+                      side: canBuy
+                          ? const BorderSide(color: Colors.orangeAccent)
+                          : const BorderSide(color: Colors.grey),
                     ),
-                    onPressed: inStock
+                    onPressed: canBuy
                         ? () {
-                      // Add to cart with quantity=1
+                      // Add to cart
                       CartPage.addToCart(product, 1);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text("$name added to cart"),
-                        ),
+                        SnackBar(content: Text("$title added to cart")),
                       );
                     }
                         : null,
@@ -239,7 +397,6 @@ class _ProductsPageState extends State<ProductsPage> {
     );
   }
 
-  // If imageUrl is empty or fails to load, show a placeholder icon
   Widget _buildProductImage(String url) {
     if (url.isEmpty) {
       return const SizedBox(
@@ -262,5 +419,54 @@ class _ProductsPageState extends State<ProductsPage> {
         },
       );
     }
+  }
+
+  // Helper to re-fetch from server with current page=1, plus search text, plus category
+  void _fetchFromServer({int page = 1}) {
+    final searchText = _searchCtrl.text.trim();
+    shopController.fetchProducts(
+      page: page,
+      productTitle: searchText.isEmpty ? null : searchText,
+      categoryId: selectedCategoryId,
+    );
+  }
+
+  // Pagination row
+  Widget _buildPaginationRow() {
+    return Obx(() {
+      final currentPage = shopController.currentPage.value;
+      final totalPages = shopController.totalPages.value;
+      return Container(
+        color: Colors.black,
+        padding: const EdgeInsets.all(8),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+              onPressed: currentPage > 1
+                  ? () {
+                _fetchFromServer(page: currentPage - 1);
+              }
+                  : null,
+              child: const Text("Prev"),
+            ),
+            Text(
+              "Page $currentPage / $totalPages",
+              style: const TextStyle(color: Colors.white),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+              onPressed: currentPage < totalPages
+                  ? () {
+                _fetchFromServer(page: currentPage + 1);
+              }
+                  : null,
+              child: const Text("Next"),
+            ),
+          ],
+        ),
+      );
+    });
   }
 }
