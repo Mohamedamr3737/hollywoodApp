@@ -1,9 +1,10 @@
+// ticket_details_page.dart
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'AddCommentPageRequest.dart'; // <-- Make sure this points to your actual AddCommentPage file
 import '../controller/requests_controller.dart';
+import 'AddCommentPageRequest.dart';
+
 class TicketDetailsPage extends StatefulWidget {
-  // Pass the entire request as a Map<String, dynamic>
   final Map<String, dynamic> request;
 
   const TicketDetailsPage({Key? key, required this.request}) : super(key: key);
@@ -14,15 +15,17 @@ class TicketDetailsPage extends StatefulWidget {
 
 class _TicketDetailsPageState extends State<TicketDetailsPage> {
   late Map<String, dynamic> _request;
+  final _requestsController = RequestsController();
+
+  bool _isClosing = false;
+  String? _closeErrorMessage;
 
   @override
   void initState() {
     super.initState();
-    // Copy the request so we can modify it (e.g., status changes or adding comments)
+    // Make a local copy so we can modify or update data
     _request = Map.from(widget.request);
   }
-
-  final RequestsController _requestsController = RequestsController();
 
   // Navigate to AddCommentPage, passing the ticket's ID
   // If a new comment is returned, add it to the local comments list
@@ -41,35 +44,48 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> {
       ),
     );
 
-    // If the user successfully added a comment and we got back a Map
-    // that looks like { "id": 72, "comment": "...", "files": [...], "by": "...", "created_at": "..." }
     if (newComment != null) {
-      // EITHER re-fetch from server or just append locally
-
-      // 1) Re-fetch from server (if you have a fetchSingleTicket API):
-      await _requestsController.fetchMyRequests(int.tryParse(ticketId.toString()) ?? 0);
-
-      // 2) OR just append the new comment to the local list:
       final commentsList = _request['comments'] as List<dynamic>;
       commentsList.add(newComment);
       setState(() {});
     }
-    }
+  }
 
+  // Close ticket by calling the new API
+  Future<void> _closeTicket() async {
+    final ticketId = _request['id'];
+    if (ticketId == null) return;
 
-  // Example: "Close Ticket"
-  // In a real app, you'd call an API to close it, then pop with updated data
-  void _closeTicket() {
     setState(() {
-      _request['status'] = 'Closed';
+      _isClosing = true;
+      _closeErrorMessage = null;
     });
-    // Pop back with the updated request
-    Navigator.of(context).pop(_request);
+
+    try {
+      final response = await _requestsController.closeTicket(ticketId);
+      final updatedTicket = response['data'] as Map<String, dynamic>;
+
+      // Update our local _request with the new data (status, etc.)
+      setState(() {
+        _request = updatedTicket;
+      });
+
+      // Optionally pop back with updated data
+      Navigator.of(context).pop(_request);
+
+    } catch (e) {
+      setState(() {
+        _closeErrorMessage = e.toString();
+      });
+    } finally {
+      setState(() {
+        _isClosing = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Extract fields from the request map
     final subject = _request['subject'] ?? 'No Title';
     final description = _request['description'] ?? 'No Details';
     final createdAt = _request['created_at'] ?? '';
@@ -131,7 +147,6 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> {
               elevation: 0,
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back, color: Colors.orangeAccent),
-                // Return updated map if changed
                 onPressed: () => Navigator.of(context).pop(_request),
               ),
               title: const Text(
@@ -154,35 +169,19 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Title
-                  const Text(
-                    "Title",
-                    style: TextStyle(fontSize: 14, color: Colors.black54),
-                  ),
-                  Text(
-                    subject,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
+                  const Text("Title", style: TextStyle(fontSize: 14, color: Colors.black54)),
+                  Text(subject, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
 
                   // Details
-                  const Text(
-                    "Details",
-                    style: TextStyle(fontSize: 14, color: Colors.black54),
-                  ),
-                  Text(
-                    description,
-                    style: const TextStyle(fontSize: 16),
-                  ),
+                  const Text("Details", style: TextStyle(fontSize: 14, color: Colors.black54)),
+                  Text(description, style: const TextStyle(fontSize: 16)),
                   const SizedBox(height: 8),
 
                   // Files (if any)
                   if (files.isNotEmpty) ...[
-                    const Text(
-                      "Files",
-                      style: TextStyle(fontSize: 14, color: Colors.black54),
-                    ),
+                    const Text("Files", style: TextStyle(fontSize: 14, color: Colors.black54)),
                     const SizedBox(height: 4),
-                    // Display each file link with a shortened name
                     ...files.map((f) {
                       final link = f['link']?.toString() ?? '';
                       return FileItem(fileLink: link);
@@ -192,18 +191,22 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> {
 
                   // Date
                   const Text("Date", style: TextStyle(fontSize: 14, color: Colors.black54)),
-                  Text(
-                    createdAt,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
+                  Text(createdAt, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
 
                   // Status
                   const Text("Status", style: TextStyle(fontSize: 14, color: Colors.black54)),
-                  Text(
-                    status,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
+                  Text(status, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+
+                  // Potential error from closing the ticket
+                  if (_closeErrorMessage != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      "Error closing ticket: $_closeErrorMessage",
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ],
+
                   const Divider(),
 
                   // Comments
@@ -232,12 +235,7 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // The comment text
-                              Text(
-                                commentText,
-                                style: const TextStyle(fontSize: 16),
-                              ),
-                              // The comment files, if any
+                              Text(commentText, style: const TextStyle(fontSize: 16)),
                               if (commentFiles.isNotEmpty) ...[
                                 const SizedBox(height: 4),
                                 Wrap(
@@ -253,7 +251,6 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> {
                                 ),
                               ],
                               const SizedBox(height: 4),
-                              // Who posted it & when
                               Text(
                                 "By: $commentBy on $commentDate",
                                 style: const TextStyle(fontSize: 14, color: Colors.black54),
@@ -306,8 +303,17 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> {
                         ),
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
-                      onPressed: _closeTicket,
-                      child: const Text(
+                      onPressed: _isClosing ? null : _closeTicket,
+                      child: _isClosing
+                          ? const SizedBox(
+                        height: 16,
+                        width: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                          : const Text(
                         "Close Ticket",
                         style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                       ),
@@ -323,7 +329,7 @@ class _TicketDetailsPageState extends State<TicketDetailsPage> {
   }
 }
 
-// Displays a file link with a shortened name and opens on tap
+// A small widget that displays a file link with a shortened name and opens on tap
 class FileItem extends StatelessWidget {
   final String fileLink;
 
@@ -340,12 +346,13 @@ class FileItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Extract just the file name from the URL
     final fileName = fileLink.split('/').last;
 
     return GestureDetector(
       onTap: _openFile,
       child: Container(
+        width: double.infinity,
+        margin: const EdgeInsets.only(bottom: 4),
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: Colors.grey[200],
@@ -356,9 +363,7 @@ class FileItem extends StatelessWidget {
           children: [
             const Icon(Icons.insert_drive_file, size: 18),
             const SizedBox(width: 4),
-            // Use a ConstrainedBox + ellipsis to shorten the name
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 80),
+            Expanded(
               child: Text(
                 fileName,
                 maxLines: 1,

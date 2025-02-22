@@ -1,37 +1,8 @@
+// add_ticket_page.dart
+import 'dart:io';
 import 'package:flutter/material.dart';
-
-class Ticket {
-  String id;
-  String category; // "Ask Doctor", etc.
-  String title;
-  String details;
-  String? filePath; // e.g. "Document.pdf" or null
-  String date; // e.g. "2025-02-19 03:04 PM"
-  String status; // "open", "Resolved", "Closed", "Closed by cu"
-  List<Comment> comments = [];
-
-  Ticket({
-    required this.id,
-    required this.category,
-    required this.title,
-    required this.details,
-    this.filePath,
-    required this.date,
-    required this.status,
-  });
-}
-
-class Comment {
-  String message;
-  String? filePath; // e.g. "Photo.png"
-  String date; // e.g. "2025-02-19 03:06 PM"
-
-  Comment({
-    required this.message,
-    this.filePath,
-    required this.date,
-  });
-}
+import 'package:file_picker/file_picker.dart';
+import '../controller/requests_controller.dart';
 
 class AddTicketPage extends StatefulWidget {
   final String category;
@@ -45,7 +16,12 @@ class AddTicketPage extends StatefulWidget {
 class _AddTicketPageState extends State<AddTicketPage> {
   final TextEditingController _titleCtrl = TextEditingController();
   final TextEditingController _detailsCtrl = TextEditingController();
-  String? attachedFile;
+  final RequestsController _requestsController = RequestsController();
+
+  // We'll store up to 2 file paths: doc + media
+  List<String> _filePaths = [];
+  bool _isLoading = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -54,49 +30,95 @@ class _AddTicketPageState extends State<AddTicketPage> {
     super.dispose();
   }
 
-  void _pickDocument() {
-    setState(() {
-      attachedFile = "document.pdf";
-    });
+  // Example function to map category -> type_id
+  // Adjust as needed if your app has a real mapping
+  // Convert your category string to the type ID used by the API
+  int _mapCategoryToTypeId(String category) {
+    switch (category) {
+      case "Ask Doctor":
+        return 3;
+      case "Sessions":
+        return 2;
+      case "Appointment":
+        return 1; // Adjust if needed
+      default:
+        return 0; // Fallback or handle other categories
+    }
   }
 
-  void _pickMedia() {
-    setState(() {
-      attachedFile = "photo.png";
-    });
+  Future<void> _pickDocument() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.any,
+      allowMultiple: false,
+    );
+    if (result != null && result.files.isNotEmpty) {
+      setState(() {
+        // We'll just store it as the first file path
+        _filePaths.add(result.files.first.path!);
+      });
+    }
   }
 
-  void _createTicket() {
-    if (_titleCtrl.text.isEmpty || _detailsCtrl.text.isEmpty) {
+  Future<void> _pickMedia() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.media,
+      allowMultiple: false,
+    );
+    if (result != null && result.files.isNotEmpty) {
+      setState(() {
+        _filePaths.add(result.files.first.path!);
+      });
+    }
+  }
+
+  Future<void> _createTicket() async {
+    final title = _titleCtrl.text.trim();
+    final details = _detailsCtrl.text.trim();
+
+    if (title.isEmpty || details.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please fill in all fields")),
       );
       return;
     }
 
-    // Build a new Ticket
-    final now = DateTime.now();
-    final dateString = "${now.year}-${_twoDigits(now.month)}-${_twoDigits(now.day)} "
-        "${_twoDigits(now.hour)}:${_twoDigits(now.minute)} ${now.hour < 12 ? 'AM' : 'PM'}";
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
 
-    final newTicket = Ticket(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      category: widget.category,
-      title: _titleCtrl.text.trim(),
-      details: _detailsCtrl.text.trim(),
-      filePath: attachedFile,
-      date: dateString,
-      status: "open",
-    );
+    try {
+      final typeId = _mapCategoryToTypeId(widget.category);
 
-    Navigator.of(context).pop(newTicket);
+      // Call createTicket in your RequestsController
+      final responseJson = await _requestsController.createTicket(
+        typeId: typeId,
+        subject: title,
+        description: details,
+        filePaths: _filePaths,
+      );
+
+      // On success, the server returns { "data": { "id":..., "status":..., ... }, "status":true }
+      final newTicket = responseJson['data']; // e.g. { "id":59, "status":"open", ... }
+
+      // Return the newly created ticket data to the previous page
+      Navigator.of(context).pop(newTicket);
+
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString();
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
-
-  String _twoDigits(int n) => n.toString().padLeft(2, '0');
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // Same sparkly background + lotus style
       body: Stack(
         children: [
           // Sparkly background
@@ -170,99 +192,116 @@ class _AddTicketPageState extends State<AddTicketPage> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  // Title
-                  TextFormField(
-                    controller: _titleCtrl,
-                    decoration: InputDecoration(
-                      labelText: "Title",
-                      hintText: "Enter title",
-                      filled: true,
-                      fillColor: Colors.grey[200],
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                  if (_isLoading)
+                    const Center(child: CircularProgressIndicator())
+                  else ...[
+                    if (_errorMessage != null) ...[
+                      Text(
+                        "Error: $_errorMessage",
+                        style: const TextStyle(color: Colors.red),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Details
-                  TextFormField(
-                    controller: _detailsCtrl,
-                    minLines: 3,
-                    maxLines: 6,
-                    decoration: InputDecoration(
-                      labelText: "Details",
-                      hintText: "Enter details",
-                      filled: true,
-                      fillColor: Colors.grey[200],
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Attach file
-                  Row(
-                    children: [
-                      const Text("Attached file"),
-                      const SizedBox(width: 12),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                        ),
-                        onPressed: _pickDocument,
-                        child: const Text("Document",
-                            style: TextStyle(color: Colors.white)),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                        ),
-                        onPressed: _pickMedia,
-                        child: const Text("Media",
-                            style: TextStyle(color: Colors.white)),
-                      ),
+                      const SizedBox(height: 16),
                     ],
-                  ),
-                  if (attachedFile != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: Text(
-                        attachedFile!,
-                        style: const TextStyle(color: Colors.black54),
-                      ),
-                    ),
-                  const SizedBox(height: 24),
-                  // Submit
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _createTicket,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
-                        ),
-                      ),
-                      child: const Text(
-                        "Add new ticket",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
+                    // Title
+                    TextFormField(
+                      controller: _titleCtrl,
+                      decoration: InputDecoration(
+                        labelText: "Title",
+                        hintText: "Enter title",
+                        filled: true,
+                        fillColor: Colors.grey[200],
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 16),
+                    // Details
+                    TextFormField(
+                      controller: _detailsCtrl,
+                      minLines: 3,
+                      maxLines: 6,
+                      decoration: InputDecoration(
+                        labelText: "Details",
+                        hintText: "Enter details",
+                        filled: true,
+                        fillColor: Colors.grey[200],
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Attach file
+                    Row(
+                      children: [
+                        const Text("Attach files"),
+                        const SizedBox(width: 12),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.black,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          ),
+                          onPressed: _pickDocument,
+                          child: const Text("Document", style: TextStyle(color: Colors.white)),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.black,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          ),
+                          onPressed: _pickMedia,
+                          child: const Text("Media", style: TextStyle(color: Colors.white)),
+                        ),
+                      ],
+                    ),
+                    if (_filePaths.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: _filePaths.map((path) {
+                            final fileName = path.split('/').last;
+                            return Text(
+                              fileName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(color: Colors.black54),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    const SizedBox(height: 24),
+                    // Submit
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _createTicket,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
+                        ),
+                        child: const Text(
+                          "Add new ticket",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

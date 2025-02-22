@@ -124,4 +124,53 @@ class RequestsController {
       throw Exception('Failed to close ticket (status: ${response.statusCode})');
     }
   }
+
+  // POST /api/patient/my-requests/create
+  // Body: type_id, subject, description, files[]
+  Future<Map<String, dynamic>> createTicket({
+    required int typeId,
+    required String subject,
+    required String description,
+    List<String>? filePaths, // optional
+  }) async {
+    final bearerToken = await refreshAccessToken();
+    final url = "https://portal.ahmed-hussain.com/api/patient/my-requests/create";
+
+    // We'll use a MultipartRequest for file uploads
+    final request = http.MultipartRequest('POST', Uri.parse(url))
+      ..headers['Authorization'] = 'Bearer $bearerToken'
+      ..fields['type_id'] = typeId.toString()
+      ..fields['subject'] = subject
+      ..fields['description'] = description;
+
+    // If we have any file paths, attach them
+    if (filePaths != null && filePaths.isNotEmpty) {
+      for (final path in filePaths) {
+        final file = File(path);
+        final fileName = file.path.split('/').last;
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'files[]',
+            file.path,
+            filename: fileName,
+          ),
+        );
+      }
+    }
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode == 200) {
+      final jsonData = json.decode(response.body) as Map<String, dynamic>;
+      if (jsonData['status'] == true) {
+        // The new ticket is in jsonData['data']
+        return jsonData;
+      } else {
+        throw Exception(jsonData['message'] ?? 'Failed to create ticket');
+      }
+    } else {
+      throw Exception('Failed to create ticket (status: ${response.statusCode})');
+    }
+  }
 }
