@@ -23,7 +23,7 @@ class SessionController extends GetxController {
   Future<void> fetchSessions() async {
     try {
       isLoading(true);
-      var bearerToken= await refreshAccessToken();
+      var bearerToken= await getAccessToken();
       errorMessage.value = "";
 
       print("Fetching regions...");
@@ -65,7 +65,7 @@ class SessionController extends GetxController {
   Future<void> fetchSessionDetails(int regionId) async {
     try {
       isLoading(true);
-      var bearerToken= await refreshAccessToken();
+      var bearerToken= await getAccessToken();
       errorMessage2.value = "";
       sessionDetails.clear();  // Clear old session details before fetching new ones
 
@@ -144,7 +144,7 @@ class SessionController extends GetxController {
     bool isSuccess = false;
     try {
       isLoading(true);
-      var bearerToken = await refreshAccessToken();
+      var bearerToken = await getAccessToken();
       successMessage.value = "";
 
       // **Format Date (YYYY-MM-DD)**
@@ -215,7 +215,7 @@ class SessionController extends GetxController {
     bool isSuccess = false;
     try {
       isLoading(true);
-      var bearerToken = await refreshAccessToken();
+      var bearerToken = await getAccessToken();
       successMessage.value = "";
 
       final Uri url = Uri.parse(

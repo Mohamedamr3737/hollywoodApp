@@ -6,7 +6,7 @@ import 'AddTicketPageRequest.dart';
 import 'TicketDetailsPageRequest.dart';
 
 class MyRequestsPage extends StatefulWidget {
-  final String category; // e.g. "Ask Doctor", "Sessions", etc.
+  final int category; // e.g. "Ask Doctor", "Sessions", etc.
 
   const MyRequestsPage({Key? key, required this.category}) : super(key: key);
 
@@ -42,19 +42,6 @@ class _MyRequestsPageState extends State<MyRequestsPage>
     super.dispose();
   }
 
-  // Convert your category string to the type ID used by the API
-  int _mapCategoryToTypeId(String category) {
-    switch (category) {
-      case "Ask Doctor":
-        return 3;
-      case "Sessions":
-        return 2;
-      case "Appointment":
-        return 1; // Adjust if needed
-      default:
-        return 0; // Fallback or handle other categories
-    }
-  }
 
   // Fetch requests from the API and distribute them by status
   Future<void> _fetchRequests() async {
@@ -64,8 +51,7 @@ class _MyRequestsPageState extends State<MyRequestsPage>
     });
 
     try {
-      final typeId = _mapCategoryToTypeId(widget.category);
-      final requestsList = await _requestsController.fetchMyRequests(typeId);
+      final requestsList = await _requestsController.fetchMyRequests(widget.category);
 
       // Temporary lists to categorize by status
       final List<Map<String, dynamic>> open = [];

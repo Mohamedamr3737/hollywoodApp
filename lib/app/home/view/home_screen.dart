@@ -9,138 +9,239 @@ import 'package:s_medi/app/home/view/SpecialOffersPage.dart';
 import './MySessionsPage.dart';
 import 'package:s_medi/app/home/view/mydata.dart';
 import 'package:s_medi/app/home/view/SelectCategoryRequestPage.dart';
+import 'NotificationsPage.dart';
 
+// 1) Import your notifications_controller
+import '../controller/notifications_controller.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+// 2) Convert to State to handle unread count fetching
+class _HomePageState extends State<HomePage> {
+  final NotificationsController _notificationsController = NotificationsController();
+
+  // Future to store unread count
+  late Future<int> _futureUnreadCount;
+
+  @override
+  void initState() {
+    super.initState();
+    // Fetch unread count once the widget is initialized
+    try {
+      _futureUnreadCount = _notificationsController.fetchUnreadCount();
+    } catch (e) {
+      print("Error calling fetchUnreadCount: $e");
+    }
+
+  }
 
   @override
   Widget build(BuildContext context) {
     final double screenWidth = MediaQuery.of(context).size.width;
     final double screenHeight = MediaQuery.of(context).size.height;
 
+    // 1) Wrap the entire body in a SafeArea so the IconButton is not
+    //    obstructed by the status bar on some devices.
     return Scaffold(
-      body: Column(
-        children: [
-          Stack(
-            alignment: Alignment.center,
-            clipBehavior: Clip.none,
-            children: [
-              // Upper background image
-              Image.network(
-                'https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcRElHzS7DF6u04X-Y0OPLE2YkIIcaI6XjbB5K5atLN_ZCPg_Un9',
-                height: screenHeight * 0.25, // 25% of screen height
-                width: double.infinity,
-                fit: BoxFit.cover,
-              ),
-              // Circle profile icon
-              Positioned(
-                bottom: -screenHeight * 0.06, // Adjust based on screen size
-                child: Container(
-                  width: screenWidth * 0.35, // 35% of screen width
-                  height: screenWidth * 0.35,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white,
-                    image: const DecorationImage(
-                      image: NetworkImage(
-                          'https://encrypted-tbn2.gstatic.com/images?q=tbn:ANd9GcSEa7ew_3UY_z3gT_InqdQmimzJ6jC3n2WgRpMUN9yekVsUxGIg'),
-                      fit: BoxFit.cover,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.3),
-                        blurRadius: 10,
-                        offset: const Offset(0, 5),
+      body: SafeArea(
+        // Everything else remains the same
+        child: Column(
+          children: [
+            Stack(
+              alignment: Alignment.center,
+              clipBehavior: Clip.none,
+              children: [
+                // Upper background image
+                Image.network(
+                  'https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcRElHzS7DF6u04X-Y0OPLE2YkIIcaI6XjbB5K5atLN_ZCPg_Un9',
+                  height: screenHeight * 0.25, // 25% of screen height
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
+                // Circle profile icon
+                Positioned(
+                  bottom: -screenHeight * 0.06, // Adjust based on screen size
+                  child: Container(
+                    width: screenWidth * 0.35, // 35% of screen width
+                    height: screenWidth * 0.35,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white,
+                      image: const DecorationImage(
+                        image: NetworkImage(
+                            'https://encrypted-tbn2.gstatic.com/images?q=tbn:ANd9GcSEa7ew_3UY_z3gT_InqdQmimzJ6jC3n2WgRpMUN9yekVsUxGIg'),
+                        fit: BoxFit.cover,
                       ),
-                    ],
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.3),
+                          blurRadius: 10,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-          SizedBox(height: screenHeight * 0.08), // Adjust spacing dynamically
-          // Grid of clickable options
-          Expanded(
-            child: GridView.count(
-              crossAxisCount: 2,
-              padding: EdgeInsets.all(screenWidth * 0.04), // Scalable padding
-              crossAxisSpacing: screenWidth * 0.04,
-              mainAxisSpacing: screenHeight * 0.03,
-              children: [
-                _buildOption(
-                  context,
-                  "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcTrKVYM6Ttou8JcXZUDH5MJfUpVg4up-jZUUxeHiu-QQpcRtsd7",
-                  "My Profile",
-                  const ProfilePage(),
-                  screenWidth,
-                ),
-                _buildOption(
-                  context,
-                  "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcSQyZNKxW9s5lEyrUlJKYIsVKzT4dbuLWHyNIhrO00viFluxBwZ",
-                  "My Sessions",
-                  const MySessionsPage(),
-                  screenWidth,
-                ),
-                _buildOption(
-                  context,
-                  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRJvshuC7e14u93nb1z_g4S1kvAIm86R0gQF-Zq4Iwq6-fZL4eY",
-                  "Appointments",
-                  const AppointmentsPage(),
-                  screenWidth,
-                ),
-                _buildOption(
-                  context,
-                  "https://encrypted-tbn2.gstatic.com/images?q=tbn:ANd9GcT5-LAPHBq67t8jlkeQ3IkUcNbPVuvQvt8R7dQUxqG1eTbKiRJa",
-                  "My Balance",
-                  MyBalancePage(),
-                  screenWidth,
-                ),
-                _buildOption(
-                  context,
-                  "https://encrypted-tbn2.gstatic.com/images?q=tbn:ANd9GcTE99tUgRwxcKQAWpnqMpWk69e2CvXj0NMIF6Img4DiU3pPsi0X",
-                  "Special Offers",
-                  const SpecialOffersPage(),
-                  screenWidth,
-                ),
-                _buildOption(
-                  context,
-                  "https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcRXi5xyC8STTuAtazhR44tMHwxldphRmj9zzNRtK9X23n-_p93k",
-                  "My Order",
-                  const MyOrdersPage(),
-                  screenWidth,
-                ),
-                _buildOption(
-                  context,
-                  "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcTusZ1LSpUqvBE3uLFQ3Y9oxEGt8nck4oJRRE3hm5xJEfs9F-An",
-                  "Prescription",
-                  const PrescriptionPage(),
-                  screenWidth,
-                ),
-                _buildOption(
-                  context,
-                  "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcTusZ1LSpUqvBE3uLFQ3Y9oxEGt8nck4oJRRE3hm5xJEfs9F-An",
-                  "My Data",
-                  const MyDataPage(),
-                  screenWidth,
-                ),
-                _buildOption(
-                  context,
-                  "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcTusZ1LSpUqvBE3uLFQ3Y9oxEGt8nck4oJRRE3hm5xJEfs9F-An",
-                  "My Requests",
-                  const SelectCategoryPage(),
-                  screenWidth,
+                // Notifications Icon (top-right) with badge
+                Positioned(
+                  top: 16,
+                  right: 16,
+                  child: FutureBuilder<int>(
+                    future: _futureUnreadCount,
+                    builder: (context, snapshot) {
+                      final unreadCount = snapshot.data ?? 0;
+                      print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+                      print(unreadCount);
+                      return Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          IconButton(
+                            icon: const Icon(
+                              Icons.notifications,
+                              color: Colors.white,
+                              size: 30,
+                            ),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const NotificationsPage()),
+                              ).then((_) {
+                                // Call your homepage refresh method after returning
+                                setState(() {
+                                  _notificationsController.fetchUnreadCount();
+                                  setState(() {
+
+                                  });
+                                });
+                              });
+                            },
+                          ),
+                          // If there's an unread count, show a small red badge
+                          if (unreadCount > 0)
+                            Positioned(
+                              right: 0,
+                              top: -2,
+                              child: Container(
+                                padding: const EdgeInsets.all(3),
+                                decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                constraints: const BoxConstraints(
+                                  minWidth: 18,
+                                  minHeight: 18,
+                                ),
+                                child: Text(
+                                  unreadCount.toString(),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ),
+                        ],
+                      );
+                    },
+                  ),
                 ),
               ],
             ),
-          ),
-        ],
+            SizedBox(height: screenHeight * 0.08), // Adjust spacing dynamically
+            // Grid of clickable options
+            Expanded(
+              child: GridView.count(
+                crossAxisCount: 2,
+                padding: EdgeInsets.all(screenWidth * 0.04), // Scalable padding
+                crossAxisSpacing: screenWidth * 0.04,
+                mainAxisSpacing: screenHeight * 0.03,
+                children: [
+                  _buildOption(
+                    context,
+                    "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcTrKVYM6Ttou8JcXZUDH5MJfUpVg4up-jZUUxeHiu-QQpcRtsd7",
+                    "My Profile",
+                    const ProfilePage(),
+                    screenWidth,
+                  ),
+                  _buildOption(
+                    context,
+                    "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcSQyZNKxW9s5lEyrUlJKYIsVKzT4dbuLWHyNIhrO00viFluxBwZ",
+                    "My Sessions",
+                    const MySessionsPage(),
+                    screenWidth,
+                  ),
+                  _buildOption(
+                    context,
+                    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRJvshuC7e14u93nb1z_g4S1kvAIm86R0gQF-Zq4Iwq6-fZL4eY",
+                    "Appointments",
+                    const AppointmentsPage(),
+                    screenWidth,
+                  ),
+                  _buildOption(
+                    context,
+                    "https://encrypted-tbn2.gstatic.com/images?q=tbn:ANd9GcT5-LAPHBq67t8jlkeQ3IkUcNbPVuvQvt8R7dQUxqG1eTbKiRJa",
+                    "My Balance",
+                    MyBalancePage(),
+                    screenWidth,
+                  ),
+                  _buildOption(
+                    context,
+                    "https://encrypted-tbn2.gstatic.com/images?q=tbn:ANd9GcTE99tUgRwxcKQAWpnqMpWk69e2CvXj0NMIF6Img4DiU3pPsi0X",
+                    "Special Offers",
+                    const SpecialOffersPage(),
+                    screenWidth,
+                  ),
+                  _buildOption(
+                    context,
+                    "https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcRXi5xyC8STTuAtazhR44tMHwxldphRmj9zzNRtK9X23n-_p93k",
+                    "My Order",
+                    const MyOrdersPage(),
+                    screenWidth,
+                  ),
+                  _buildOption(
+                    context,
+                    "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcTusZ1LSpUqvBE3uLFQ3Y9oxEGt8nck4oJRRE3hm5xJEfs9F-An",
+                    "Prescription",
+                    const PrescriptionPage(),
+                    screenWidth,
+                  ),
+                  _buildOption(
+                    context,
+                    "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcTusZ1LSpUqvBE3uLFQ3Y9oxEGt8nck4oJRRE3hm5xJEfs9F-An",
+                    "My Data",
+                    const MyDataPage(),
+                    screenWidth,
+                  ),
+                  _buildOption(
+                    context,
+                    "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcTusZ1LSpUqvBE3uLFQ3Y9oxEGt8nck4oJRRE3hm5xJEfs9F-An",
+                    "My Requests",
+                    const SelectCategoryPage(),
+                    screenWidth,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   // Build each icon option with scalable sizing
-  Widget _buildOption(BuildContext context, String imageUrl, String label, Widget page, double screenWidth) {
+  Widget _buildOption(
+      BuildContext context,
+      String imageUrl,
+      String label,
+      Widget page,
+      double screenWidth,
+      ) {
     double iconSize = screenWidth * 0.3; // 30% of screen width for icons
     double fontSize = screenWidth * 0.04; // 4% of screen width for text
 

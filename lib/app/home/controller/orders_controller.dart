@@ -37,7 +37,7 @@ class OrdersController extends GetxController {
       errorMessage('');
 
       final bearerToken = await refreshAccessToken();
-      final url = "https://portal.ahmed-hussain.com/api/patient/prescription/my-diet";
+      final url = "https://portal.ahmed-hussain.com/api/patient/shop/orders";
 
       final response = await http.get(
         Uri.parse(url),
@@ -48,7 +48,10 @@ class OrdersController extends GetxController {
       );
 
       if (response.statusCode == 200) {
+
         final jsonData = json.decode(response.body);
+        print(";;;;;;;;;;;;;;;;;;;;");
+        print(jsonData);
         if (jsonData["data"] != null) {
           final dataArr = jsonData["data"] as List<dynamic>;
           final parsed = dataArr.map((order) {

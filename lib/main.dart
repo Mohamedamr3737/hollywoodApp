@@ -38,7 +38,7 @@ class _MyAppState extends State<MyApp> {
   var auth = FirebaseAuth.instance;
 
   checkIfLogin() async {
-      if (!await isTokenExpired()) {
+      if (await refreshAccessToken()!=null) {
         setState(() {
           isLogin = true;
         });

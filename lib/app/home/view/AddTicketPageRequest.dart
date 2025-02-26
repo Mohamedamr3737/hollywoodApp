@@ -5,7 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import '../controller/requests_controller.dart';
 
 class AddTicketPage extends StatefulWidget {
-  final String category;
+  final int category;
 
   const AddTicketPage({Key? key, required this.category}) : super(key: key);
 
@@ -30,21 +30,7 @@ class _AddTicketPageState extends State<AddTicketPage> {
     super.dispose();
   }
 
-  // Example function to map category -> type_id
-  // Adjust as needed if your app has a real mapping
-  // Convert your category string to the type ID used by the API
-  int _mapCategoryToTypeId(String category) {
-    switch (category) {
-      case "Ask Doctor":
-        return 3;
-      case "Sessions":
-        return 2;
-      case "Appointment":
-        return 1; // Adjust if needed
-      default:
-        return 0; // Fallback or handle other categories
-    }
-  }
+
 
   Future<void> _pickDocument() async {
     final result = await FilePicker.platform.pickFiles(
@@ -88,7 +74,7 @@ class _AddTicketPageState extends State<AddTicketPage> {
     });
 
     try {
-      final typeId = _mapCategoryToTypeId(widget.category);
+      final typeId = widget.category;
 
       // Call createTicket in your RequestsController
       final responseJson = await _requestsController.createTicket(

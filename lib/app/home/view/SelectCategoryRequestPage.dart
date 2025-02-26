@@ -121,7 +121,7 @@ class _SelectCategoryPageState extends State<SelectCategoryPage> {
                   padding: const EdgeInsets.all(16),
                   itemBuilder: (ctx, index) {
                     final catItem = categories[index];
-                    final catId = catItem['id']?.toString() ?? '';
+                    final catId = catItem['id']?? '0';
                     final catTitle = catItem['title'] ?? 'Unknown';
 
                     return Container(
@@ -151,7 +151,7 @@ class _SelectCategoryPageState extends State<SelectCategoryPage> {
                             Navigator.of(context).push(
                               MaterialPageRoute(
                                 builder: (_) => MyRequestsPage(
-                                  category: catTitle,
+                                  category: catId,
                                   // or pass the catId if your next page needs it
                                 ),
                               ),
