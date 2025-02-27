@@ -1,21 +1,18 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:get/get.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import './app/auth/controller/token_controller.dart';
-import 'package:s_medi/firebase_options.dart';
 import 'package:s_medi/general/consts/consts.dart';
 import 'app/auth/view/login_page.dart';
 import 'app/home/view/home.dart';
 import 'app/home/controller/profile_controller.dart';
 import 'app/home/controller/notifications_controller.dart';
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  // WidgetsFlutterBinding.ensureInitialized();
   // Initialize Firebase if needed.
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  // await Firebase.initializeApp(
+  //   options: DefaultFirebaseOptions.currentPlatform,
+  // );
 
   Get.put(NotificationsController());
   runApp(
@@ -38,7 +35,6 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   var isLogin = false;
-  var auth = FirebaseAuth.instance;
 
   checkIfLogin() async {
       if (await refreshAccessToken()!=null) {

@@ -44,9 +44,6 @@ dependencies:
   cupertino_icons: ^1.0.2
   velocity_x: ^4.1.2
   get: ^4.6.6
-  firebase_core: ^2.19.0
-  firebase_auth: ^4.11.1
-  cloud_firestore: ^4.11.0
   connectivity_plus: ^5.0.2
   provider: ^6.1.2
   flutter_html: ^3.0.0-beta.2
@@ -69,12 +66,10 @@ dev_dependencies:
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 flutter_native_splash:
-  color: "#88D008"
-  image: assets/sicon.png
+  image: assets/sibcon.png
   android: true
   android_12:
-    image: assets/sicon.png
-    icon_background_color: "#88D008"
+    image: assets/sibcon.png
   ios: true
   web: false
 flutter_launcher_icons:
