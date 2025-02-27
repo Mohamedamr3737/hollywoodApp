@@ -150,6 +150,17 @@ class _ServicesPageState extends State<ServicesPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text("Services", style: TextStyle(color: Colors.black)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () {
+            Get.back();
+          },
+        ),
+      ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : errorMessage.isNotEmpty
@@ -160,7 +171,7 @@ class _ServicesPageState extends State<ServicesPage> {
           ClipRRect(
             borderRadius: BorderRadius.circular(20),
           ),
-          const SizedBox(height: 30),
+          const SizedBox(height: 16),
           const Text(
             "Our Features & Services",
             style: TextStyle(

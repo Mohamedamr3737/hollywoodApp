@@ -4,11 +4,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:s_medi/about/about.dart';
-import 'package:s_medi/app/auth/view/MyServicesPage.dart' as auth;
-import 'package:s_medi/app/auth/view/ShopPage.dart';
+import 'package:s_medi/app/home/view/Shop/ShopView.dart';
 import 'package:s_medi/app/home/view/home_screen.dart';
 import 'package:s_medi/serv/servicespage.dart';
 import 'package:s_medi/app/home/view/home.dart';
+import 'package:s_medi/app/home/view/Sessions/MySessionsPage.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({Key? key}) : super(key: key);
@@ -25,8 +25,8 @@ class _MainPageState extends State<MainPage> {
     ServicesPage(),
     AboutPage(),
     HomePage(), // Replace with your Home page widget
-    ShopPage(), // Replace with your Shop page widget
-    auth.MySessionsPage(), // Use the prefix 'auth' to specify the correct MySessionsPage
+    ProductsPage(), // Replace with your Shop page widget
+    MySessionsPage(), // Use the prefix 'auth' to specify the correct MySessionsPage
   ];
 
   // Update the selected index and rebuild with setState

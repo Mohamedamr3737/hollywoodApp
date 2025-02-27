@@ -44,9 +44,6 @@ class ProfileController with ChangeNotifier {
 
   Future<void> updateProfile(Map<String, dynamic> updatedData, BuildContext context) async {
     try {
-      if (await isTokenExpired()) {
-        await refreshAccessToken();
-      }
       String? token = await getAccessToken();
 
       // Ensure passwords are included only if they are provided

@@ -23,7 +23,7 @@ class SessionController extends GetxController {
   Future<void> fetchSessions() async {
     try {
       isLoading(true);
-      var bearerToken= await getAccessToken();
+      var bearerToken= await refreshAccessToken();
       errorMessage.value = "";
 
       print("Fetching regions...");

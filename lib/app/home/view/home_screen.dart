@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:s_medi/app/home/view/AppointmentsPage.dart';
-import 'package:s_medi/app/home/view/BalancePage.dart';
-import 'package:s_medi/app/home/view/MyOrderPage.dart';
-import 'package:s_medi/app/home/view/PrescriptionPage.dart';
-import 'package:s_medi/app/home/view/ProfilePage.dart';
-import 'package:s_medi/app/home/view/SpecialOffersPage.dart';
-import './MySessionsPage.dart';
-import 'package:s_medi/app/home/view/mydata.dart';
-import 'package:s_medi/app/home/view/SelectCategoryRequestPage.dart';
-import 'NotificationsPage.dart';
+import 'package:s_medi/app/home/view/Appointments/AppointmentsPage.dart';
+import 'package:s_medi/app/home/view/MyBalance/BalancePage.dart';
+import 'package:s_medi/app/home/view/MyOrder/MyOrderPage.dart';
+import 'package:s_medi/app/home/view/Prescription/PrescriptionPage.dart';
+import 'package:s_medi/app/home/view/Profile/ProfilePage.dart';
+import 'package:s_medi/app/home/view/SpecialOffers/SpecialOffersPage.dart';
+import 'Sessions/MySessionsPage.dart';
+import 'package:s_medi/app/home/view/MyData/mydata.dart';
+import 'package:s_medi/app/home/view/MyRequests/SelectCategoryRequestPage.dart';
+import 'Notifications/NotificationsPage.dart';
 import '../controller/notifications_controller.dart';
 
 class HomePage extends StatefulWidget {
@@ -75,7 +75,7 @@ class _HomePageState extends State<HomePage> {
                 ),
                 // Notifications Icon with reactive badge
                 Positioned(
-                  top: 40,
+                  top: 50,
                   right: 16,
                   child: Obx(() {
                     int count = _notificationsController.unreadCount.value;
@@ -185,14 +185,14 @@ class _HomePageState extends State<HomePage> {
                   ),
                   _buildOption(
                     context,
-                    "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcTusZ1LSpUqvBE3uLFQ3Y9oxEGt8nck4oJRRE3hm5xJEfs9F-An",
+                    "https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcSRxOq189jhRYvBGI1eN6ONlf2CRKfoGomD4R-0bwruGSkgFcOv",
                     "My Data",
                     const MyDataPage(),
                     screenWidth,
                   ),
                   _buildOption(
                     context,
-                    "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcTusZ1LSpUqvBE3uLFQ3Y9oxEGt8nck4oJRRE3hm5xJEfs9F-An",
+                    "https://www.domaonline.com/wp-content/uploads/2019/09/Healthcare_DXWalkthrough-copy-4.png",
                     "My Requests",
                     const SelectCategoryPage(),
                     screenWidth,

@@ -3,11 +3,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:s_medi/about/about.dart';
-import 'package:s_medi/app/home/view/ShopView.dart';
+import 'package:s_medi/app/home/view/Shop/ShopView.dart';
 import 'package:s_medi/app/home/view/home_screen.dart';
 import 'package:s_medi/general/consts/colors.dart';
 import 'package:s_medi/serv/servicespage.dart';
-import './MySessionsPage.dart';
+import 'Sessions/MySessionsPage.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});

@@ -20,20 +20,6 @@ Future<void> storeTokens(String accessToken) async {
   // await prefs.setString('access_token_expiry', expiryTime.toIso8601String());
 }
 
-Future<bool> isTokenExpired() async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  String? expiryTimeString = prefs.getString('access_token_expiry');
-
-  DateTime expiryTime = DateTime.parse(expiryTimeString!);
-  DateTime now = DateTime.now();
-
-  // Check if the token will expire in the next 5 minutes
-  if (expiryTime.isBefore(now.add(Duration(minutes: 5)))) {
-    return true; // Token is about to expire
-  }
-
-  return false; // Token is still valid
-}
 
 // Method to retrieve the access token from SharedPreferences
 Future<String?> getAccessToken() async {

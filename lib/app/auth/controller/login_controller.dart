@@ -52,7 +52,7 @@ class LoginController extends GetxController {
 
           String? tokk = await getAccessToken();
 
-          VxToast.show(context, msg: "Login Successful $tokk ");
+          VxToast.show(context, msg: "Login Successful");
 
           // Navigate to Home if login is successful
           Get.offAll(() => const Home());
