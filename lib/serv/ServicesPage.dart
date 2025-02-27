@@ -1,133 +1,189 @@
-// ignore_for_file: use_key_in_widget_constructors
-
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:get/get.dart';
-import 'package:s_medi/serv/ServiceDetailPage.dart';
+import 'package:flutter_html/flutter_html.dart';
 
-class ServicesPage extends StatelessWidget {
-  final List<Service> services = [
-    Service(
-      title: 'Morpheus 8',
-      description:
-          'The deeper and most powerful face and body tightening technology...',
-      imagePath:
-          'https://media.istockphoto.com/id/1321856038/photo/portrait-beautiful-young-woman-with-clean-fresh-skin.jpg?s=612x612&w=0&k=20&c=jP4pZTdV_7hHPMhFUaFNZSAbIDQAOUEcrMPMwSKFLqk=',
-      details:
-          'The deeper and most powerfull face and body tightening technology The Morpheus8 is a new subdermal adipose remodeling device (SARD) that fractionally remodels ,contours and  tight  the face and body . Penetrating deep into the skin and fat, this morphs the aging face or body into a more desired smooth and sleek appearance, for all skin tones.',
-      detailImages: [
-        'https://comitemdskin.com/wp-content/uploads/2022/08/Morpheus_banner_v2.jpg',
-      ],
-      text: null,
-    ),
+// If you want to parse HTML in ServiceDetailPage, import flutter_html there.
 
-    Service(
-      title: 'Morpheus 8',
-      description:
-          'The deeper and most powerful face and body tightening technology...',
-      imagePath:
-          'https://media.istockphoto.com/id/1321856038/photo/portrait-beautiful-young-woman-with-clean-fresh-skin.jpg?s=612x612&w=0&k=20&c=jP4pZTdV_7hHPMhFUaFNZSAbIDQAOUEcrMPMwSKFLqk=',
-      details:
-          'The deeper and most powerful face and body tightening technology...',
-      detailImages: [
-        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQmha5aZ45AUQyyheaRCnWnpmnoODetun4icLO0WGGGtHVaLmgTmPMmtY6CaWha9egCeOA&usqp=CAU',
-        'https://comitemdskin.com/wp-content/uploads/2022/08/Morpheus_banner_v2.jpg',
-      ],
-      text: null,
-    ),
-    Service(
-      title: 'Morpheus 8',
-      description:
-          'The deeper and most powerful face and body tightening technology...',
-      imagePath:
-          'https://media.istockphoto.com/id/1321856038/photo/portrait-beautiful-young-woman-with-clean-fresh-skin.jpg?s=612x612&w=0&k=20&c=jP4pZTdV_7hHPMhFUaFNZSAbIDQAOUEcrMPMwSKFLqk=',
-      details:
-          'The deeper and most powerful face and body tightening technology...',
-      detailImages: [
-        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQmha5aZ45AUQyyheaRCnWnpmnoODetun4icLO0WGGGtHVaLmgTmPMmtY6CaWha9egCeOA&usqp=CAU',
-        'https://comitemdskin.com/wp-content/uploads/2022/08/Morpheus_banner_v2.jpg',
-      ],
-      text: null,
-    ),
-    Service(
-      title: 'Morpheus 8',
-      description:
-          'The deeper and most powerful face and body tightening technology...',
-      imagePath:
-          'https://media.istockphoto.com/id/1321856038/photo/portrait-beautiful-young-woman-with-clean-fresh-skin.jpg?s=612x612&w=0&k=20&c=jP4pZTdV_7hHPMhFUaFNZSAbIDQAOUEcrMPMwSKFLqk=',
-      details:
-          'The deeper and most powerful face and body tightening technology...',
-      detailImages: [
-        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQmha5aZ45AUQyyheaRCnWnpmnoODetun4icLO0WGGGtHVaLmgTmPMmtY6CaWha9egCeOA&usqp=CAU',
-        'https://comitemdskin.com/wp-content/uploads/2022/08/Morpheus_banner_v2.jpg',
-      ],
-      text: null,
-    ),
+// Example detail page that can parse HTML in the 'body' field.
+class ServiceDetailPage extends StatelessWidget {
+  final Service service;
 
-    // Additional services...
-  ];
+  const ServiceDetailPage({Key? key, required this.service}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        title: Text("Services", style: TextStyle(color: Colors.black)),
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            Get.back();
-          },
-        ),
+        title: Text(service.title),
+        backgroundColor: Colors.black,
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16.0),
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          SizedBox(height: 16),
-          Text(
-            "Our Features & Services",
-            style: TextStyle(
-                fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
-            textAlign: TextAlign.center,
-          ),
-          SizedBox(height: 16),
-          // List of ServiceCards in a vertical scroll direction
-          ...services.map((service) {
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: ServiceCard(service: service),
-            );
-          }).toList(),
-        ],
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Main Image
+            Image.network(
+              service.imagePath,
+              width: double.infinity,
+              height: 250,
+              fit: BoxFit.cover,
+            ),
+            const SizedBox(height: 16),
+
+            // Title
+            Text(
+              service.title,
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+
+            // Short description or details
+            Text(
+              service.details,
+              style: const TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 16),
+
+            // Parse the HTML body using flutter_html
+            Html(
+              data: service.body ?? "",
+              // Optionally customize styling or behavior
+              style: {
+                "body": Style(
+                  fontSize: FontSize(5),
+                  color: Colors.black87,
+                ),
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
 }
-
+/// Model class for each service item.
 class Service {
   final String title;
   final String description;
   final String imagePath;
   final String details;
-  final List<String> detailImages;
-  final String? text;
+  final List<String>? detailImages;
+  final String? body; // Add 'body' field to hold HTML or detailed text.
 
   Service({
     required this.title,
     required this.description,
     required this.imagePath,
     required this.details,
-    required this.detailImages,
-    this.text,
+    this.detailImages,
+    this.body,
   });
+
+  /// Factory constructor to parse JSON from the API.
+  factory Service.fromJson(Map<String, dynamic> json) {
+    // Adjust keys to match your API fields.
+    // e.g., "title", "short_description", "image", "body"
+    return Service(
+      title: json["title"] ?? "",
+      description: json["short_description"] ?? "",
+      imagePath: json["image"] ?? "",
+      details: "", // We'll fill this with short_description or body if needed
+      detailImages: [],
+      body: json["body"] ?? "",
+    );
+  }
+}
+
+class ServicesPage extends StatefulWidget {
+  const ServicesPage({Key? key}) : super(key: key);
+
+  @override
+  State<ServicesPage> createState() => _ServicesPageState();
+}
+
+class _ServicesPageState extends State<ServicesPage> {
+  bool isLoading = false;
+  String errorMessage = "";
+  List<Service> services = [];
+
+  /// Fetch services from the API.
+  Future<void> fetchServices() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    final url = Uri.parse("https://portal.ahmed-hussain.com/api/patient/pages/Service");
+
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data["status"] == true) {
+          // data["data"] should be a list of service items
+          final List<dynamic> rawServices = data["data"];
+          services = rawServices.map((jsonItem) => Service.fromJson(jsonItem)).toList();
+          errorMessage = '';
+        } else {
+          errorMessage = data["message"] ?? "Failed to fetch services.";
+        }
+      } else {
+        errorMessage = "Server error: ${response.statusCode}";
+      }
+    } catch (e) {
+      errorMessage = "An error occurred: $e";
+    }
+
+    setState(() {
+      isLoading = false;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    fetchServices();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : errorMessage.isNotEmpty
+          ? Center(child: Text(errorMessage))
+          : ListView(
+        padding: const EdgeInsets.all(16.0),
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          const SizedBox(height: 30),
+          const Text(
+            "Our Features & Services",
+            style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.black),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          // Build a list of ServiceCards from the fetched data
+          for (var service in services)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: ServiceCard(service: service),
+            ),
+        ],
+      ),
+    );
+  }
 }
 
 class ServiceCard extends StatelessWidget {
   final Service service;
-
   const ServiceCard({required this.service});
 
   @override
@@ -140,6 +196,7 @@ class ServiceCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            // Circle image
             ClipOval(
               child: Image.network(
                 service.imagePath,
@@ -148,42 +205,54 @@ class ServiceCard extends StatelessWidget {
                 fit: BoxFit.cover,
                 loadingBuilder: (context, child, loadingProgress) {
                   if (loadingProgress == null) return child;
-                  return Center(child: CircularProgressIndicator());
+                  return const Center(child: CircularProgressIndicator());
                 },
                 errorBuilder: (context, error, stackTrace) {
-                  return Icon(Icons.error, color: Colors.red, size: 100);
+                  return const Icon(Icons.error, color: Colors.red, size: 100);
                 },
               ),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
+            // Title
             Text(
               service.title,
-              style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black),
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
+            // Short description
             Text(
               service.description,
               style: TextStyle(fontSize: 14, color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
+            // "Read More" button
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.black,
-                shape: StadiumBorder(),
+                shape: const StadiumBorder(),
               ),
               onPressed: () {
+                // Pass the entire service object to detail page
                 Get.to(() => ServiceDetailPage(service: service));
               },
-              child: Text('Read More', style: TextStyle(color: Colors.white)),
+              child: const Text('Read More', style: TextStyle(color: Colors.white)),
             ),
           ],
         ),
       ),
     );
   }
+}
+
+void main() {
+  runApp(GetMaterialApp(
+    debugShowCheckedModeBanner: false,
+    home: const ServicesPage(),
+  ));
 }

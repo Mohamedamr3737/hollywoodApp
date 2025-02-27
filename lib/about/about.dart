@@ -1,60 +1,225 @@
-// ignore_for_file: prefer_const_constructors, use_key_in_widget_constructors
-
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_html/flutter_html.dart';
+import 'package:http/http.dart' as http;
 
-class AboutPage extends StatelessWidget {
+/// A simple model for the About item.
+class AboutItem {
+  final int id;
+  final String title;
+  final String image;
+  final String shortDescription;
+  final String body;
+
+  AboutItem({
+    required this.id,
+    required this.title,
+    required this.image,
+    required this.shortDescription,
+    required this.body,
+  });
+
+  factory AboutItem.fromJson(Map<dynamic, dynamic> json) {
+    return AboutItem(
+      id: json["id"] ?? 0,
+      title: json["title"] ?? "",
+      image: json["image"] ?? "",
+      shortDescription: json["short_description"] ?? "",
+      body: json["body"] ?? "",
+    );
+  }
+}
+
+class AboutPage extends StatefulWidget {
+  const AboutPage({Key? key}) : super(key: key);
+
+  @override
+  State<AboutPage> createState() => _AboutPageState();
+}
+
+class _AboutPageState extends State<AboutPage> {
+  AboutItem? aboutItem;
+  bool isLoading = false;
+  String errorMessage = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAboutItem();
+  }
+
+  Future<void> _fetchAboutItem() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    final url = Uri.parse("https://portal.ahmed-hussain.com/api/patient/pages/About");
+
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+        if (jsonResponse["status"] == true) {
+          // If data is a single object, parse it directly
+          // If data might be a list, you can adapt as needed
+          final data = jsonResponse["data"];
+          if (data is Map) {
+            aboutItem = AboutItem.fromJson(data);
+          } else {
+            // Fallback if the API returns a list unexpectedly
+            errorMessage = "Unexpected data format.";
+          }
+        } else {
+          errorMessage = jsonResponse["message"] ?? "Failed to fetch about info.";
+        }
+      } else {
+        errorMessage = "Server error: ${response.statusCode}";
+      }
+    } catch (e) {
+      errorMessage = "An error occurred: $e";
+    }
+
+    setState(() {
+      isLoading = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    // While loading, show a spinner
+    if (isLoading) {
+      return Scaffold(
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    // If there's an error or no item, show a message
+    if (aboutItem == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text("About"),
+        ),
+        body: Center(
+          child: Text(
+            errorMessage.isNotEmpty ? errorMessage : "No about data found.",
+            style: const TextStyle(fontSize: 16),
+          ),
+        ),
+      );
+    }
+
+    // Otherwise, show the about data
     return Scaffold(
+      // Transparent AppBar to overlay the curved header
       appBar: AppBar(
+        title: const Text("About"),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text("About", style: TextStyle(color: Colors.black)),
-        centerTitle: true,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          onPressed: () => Navigator.pop(context),
         ),
+        centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header Image
-            ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: Image.network(
-                'https://pbs.twimg.com/media/El-OxkDVcAI6oV1.jpg', // Replace with your image URL
-                height: 300,
-                width: double.infinity,
-                fit: BoxFit.cover,
-              ),
+      extendBodyBehindAppBar: true, // So the app bar floats over the header
+      body: Stack(
+        children: [
+          // Curved header background
+          ClipPath(
+            clipper: _HeaderClipper(),
+            child: Container(
+              height: 300,
+              color: Colors.orangeAccent,
             ),
-            SizedBox(height: 16),
-            Text(
-              "Hollywood Clinic",
-              style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+          ),
+
+          // Main content scroll view
+          SingleChildScrollView(
+            padding: const EdgeInsets.only(top: 100, left: 16, right: 16, bottom: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Hero image
+                Center(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Image.network(
+                      aboutItem!.image,
+                      width: double.infinity,
+                      height: 250,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Title
+                Text(
+                  aboutItem!.title,
+                  style: const TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                // Short description
+                Text(
+                  aboutItem!.shortDescription,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black54,
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Parse the HTML body
+                Html(
+                  data: aboutItem!.body,
+                  style: {
+                    "body": Style(
+                      fontSize: FontSize(16),
+                      color: Colors.black87,
+                    ),
+                  },
+                ),
+              ],
             ),
-            SizedBox(height: 8),
-            Text(
-              "Skin Care – Beauty – Slimming",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.black54,
-              ),
-            ),
-            SizedBox(height: 16),
-            Text(
-              "Every female dreams to be a star and no star without beauty, so we developed Hollywood Clinic to take your hand to become the most beautiful women in the world, to take a step forward on the fame stairs. We work with passion, with an artistic touch, to draw your beauty. We care about every small detail. We use every moment to give you the chance to shine bright like a diamond and be a star in the sky.",
-              style: TextStyle(fontSize: 16, color: Colors.black87),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
+}
+
+/// A custom clipper to create a curved header shape
+class _HeaderClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    // Creates a simple curved shape for the header
+    Path path = Path();
+    path.lineTo(0, size.height - 50);
+    // Quadratic bezier curve for a smooth shape
+    path.quadraticBezierTo(
+      size.width / 2, // control point x
+      size.height,    // control point y
+      size.width,     // end point x
+      size.height - 50, // end point y
+    );
+    path.lineTo(size.width, 0);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(_HeaderClipper oldClipper) => false;
+}
+
+void main() {
+  runApp(const MaterialApp(
+    home: AboutPage(),
+    debugShowCheckedModeBanner: false,
+  ));
 }

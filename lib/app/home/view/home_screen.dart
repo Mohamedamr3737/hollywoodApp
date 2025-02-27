@@ -35,8 +35,8 @@ class _HomePageState extends State<HomePage> {
     final double screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      body: SafeArea(
-        child: Column(
+      body:
+        Column(
           children: [
             Stack(
               alignment: Alignment.center,
@@ -75,7 +75,7 @@ class _HomePageState extends State<HomePage> {
                 ),
                 // Notifications Icon with reactive badge
                 Positioned(
-                  top: 16,
+                  top: 40,
                   right: 16,
                   child: Obx(() {
                     int count = _notificationsController.unreadCount.value;
@@ -202,7 +202,6 @@ class _HomePageState extends State<HomePage> {
             ),
           ],
         ),
-      ),
     );
   }
 

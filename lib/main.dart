@@ -19,6 +19,7 @@ void main() async {
 
   Get.put(NotificationsController());
   runApp(
+
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ProfileController()),
@@ -67,7 +68,7 @@ class _MyAppState extends State<MyApp> {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xff4B2EAD)),
         useMaterial3: true,
       ),
-      home: !isLogin ? const Home() : const LoginView(),
+      home: isLogin ? const Home() : const LoginView(),
     );
   }
 }
