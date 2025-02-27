@@ -1,69 +1,47 @@
-// ignore_for_file: avoid_print
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
+import 'package:velocity_x/velocity_x.dart';
+import 'CodeVerificationPage.dart';
 
-import 'package:s_medi/general/consts/consts.dart';
-
-class PasswordResetPage extends StatefulWidget {
-  const PasswordResetPage({super.key});
+class UsernameResetPage extends StatefulWidget {
+  const UsernameResetPage({Key? key}) : super(key: key);
 
   @override
-  // ignore: library_private_types_in_public_api
-  _PasswordResetPageState createState() => _PasswordResetPageState();
+  _UsernameResetPageState createState() => _UsernameResetPageState();
 }
 
-class _PasswordResetPageState extends State<PasswordResetPage> {
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController newPasswordController = TextEditingController();
+class _UsernameResetPageState extends State<UsernameResetPage> {
+  final TextEditingController phoneController = TextEditingController();
+  bool isLoading = false;
 
-  Future<void> resetPassword(String email) async {
-    try {
-      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
-      // ignore: use_build_context_synchronously
-      VxToast.show(context, msg: "Password reset email sent to your email");
-      Get.back();
-      // Handle navigation or show a success message
-    } catch (error) {
-      // Handle password reset email sending error
-      print(error.toString());
-      // Show an error message to the user
-    }
-  }
-
-  Future<void> updatePasswordInFirestore(User user, String newPassword) async {
-    try {
-      String userId = user.uid;
-      CollectionReference users =
-          FirebaseFirestore.instance.collection('users');
-      await users.doc(userId).update({'password': newPassword});
-      // Password in Firestore updated successfully
-      // Handle navigation or show a success message
-    } catch (error) {
-      // Handle Firestore update error
-      print(error.toString());
-      // Show an error message to the user
-    }
-  }
-
-  Future<void> handlePasswordReset() async {
-    String email = emailController.text;
-    String newPassword = newPasswordController.text;
+  Future<void> sendVerificationCode(String phone) async {
+    final url = Uri.parse("https://portal.ahmed-hussain.com/api/patient/auth/forget-password");
 
     try {
-      // Send password reset email
-      await resetPassword(email);
+      final response = await http.post(url, body: {"phone": phone});
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+        if (jsonResponse["status"] == true) {
+          // Get the original API message.
+          String message = jsonResponse["message"];
+          // Remove any trailing digits (verification code) from the message.
+          String cleanMessage = message.replaceAll(RegExp(r'\d+$'), '').trim();
 
-      // Wait for the user to reset their password using the email link
+          // Show the cleaned message to the user.
+          VxToast.show(context, msg: cleanMessage);
 
-      // Get the current user after password reset
-      User? user = FirebaseAuth.instance.currentUser;
-
-      if (user != null) {
-        // Update the password in Firestore
-        await updatePasswordInFirestore(user, newPassword);
+          // Navigate to the CodeVerificationPage and pass the phone number.
+          Get.to(() => CodeVerificationPage(username: phone));
+        } else {
+          VxToast.show(context, msg: jsonResponse["message"] ?? "Error occurred");
+        }
+      } else {
+        VxToast.show(context, msg: "Server error: ${response.statusCode}");
       }
-    } catch (error) {
-      // Handle password reset and Firestore update errors
-      print(error.toString());
-      // Show an error message to the user
+    } catch (e) {
+      VxToast.show(context, msg: "Error: $e");
     }
   }
 
@@ -71,43 +49,84 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Password Reset'),
+        title: "Reset Password".text.make(),
+        backgroundColor: Colors.indigo,
+        elevation: 0,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            30.heightBox,
-            TextField(
-              controller: emailController,
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Icons.email_rounded),
-                labelText: 'Enter your Email',
-                border: OutlineInputBorder(borderSide: BorderSide()),
+      body: Container(
+        width: context.screenWidth,
+        height: context.screenHeight,
+
+        child: Center(
+          child: Card(
+            elevation: 8,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16)),
+            margin: const EdgeInsets.symmetric(horizontal: 24),
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  "Reset Password".text.xl2.bold.make().pOnly(bottom: 16),
+                  "Enter your phone number to receive a verification code."
+                      .text
+                      .sm
+                      .make()
+                      .pOnly(bottom: 16),
+                  TextField(
+                    controller: phoneController,
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.phone),
+                      labelText: 'Phone Number',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    keyboardType: TextInputType.phone,
+                  ).pOnly(bottom: 16),
+                  ElevatedButton(
+                    onPressed: isLoading
+                        ? null
+                        : () async {
+                      String phone = phoneController.text;
+                      if (phone.isNotEmpty) {
+                        setState(() {
+                          isLoading = true;
+                        });
+                        await sendVerificationCode(phone);
+                        setState(() {
+                          isLoading = false;
+                        });
+                      } else {
+                        VxToast.show(context,
+                            msg: "Please enter a phone number");
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.indigo,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 32, vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: isLoading
+                        ? SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                        : "Send Verification Code".text.make(),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 16.0),
-            TextField(
-              controller: newPasswordController,
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Icons.key),
-                labelText: 'Enter New Password',
-                border: OutlineInputBorder(borderSide: BorderSide()),
-              ),
-            ),
-            const SizedBox(height: 16.0),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.bgColor,
-                shape: const StadiumBorder(),
-              ),
-              onPressed: () => handlePasswordReset(),
-              child: const Text(
-                'Reset Password',
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

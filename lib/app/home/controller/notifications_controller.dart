@@ -1,6 +1,5 @@
-// notifications_controller.dart
-
 import 'dart:convert';
+import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import '../../auth/controller/token_controller.dart';
 
@@ -28,8 +27,11 @@ class NotificationItem {
   });
 }
 
-class NotificationsController {
-  // 1) Fetch notifications as before
+class NotificationsController extends GetxController {
+  // Observable unread count
+  var unreadCount = 0.obs;
+
+  // Fetch notifications as before
   Future<List<NotificationItem>> fetchNotifications() async {
     final String? bearerToken = await refreshAccessToken();
     const String url = 'https://portal.ahmed-hussain.com/api/patient/notifications/list';
@@ -69,7 +71,7 @@ class NotificationsController {
     }
   }
 
-  // 2) Mark a single notification as read
+  // Mark a single notification as read
   Future<void> markAsRead(int notificationId) async {
     print(notificationId);
     final String? bearerToken = await refreshAccessToken();
@@ -90,7 +92,8 @@ class NotificationsController {
       final jsonBody = json.decode(response.body);
 
       if (jsonBody['status'] == true) {
-        // Successfully marked as read, nothing else needed
+        // Successfully marked as read, update unread count.
+        await fetchUnreadCount();
       } else {
         throw Exception('API Error: ${jsonBody['message']}');
       }
@@ -117,16 +120,44 @@ class NotificationsController {
     print(response.statusCode);
 
     if (response.statusCode == 200) {
-      int jsonBody =  int.parse(response.body);
-      print("aaaaaaaaaaaaaaaaaaaaaaaaaa");
+      int jsonBody = int.parse(response.body);
+      print("Unread Count:");
       print(jsonBody);
-
-        // The "data" field should be the integer count
-        return jsonBody?? 0;
-
+      unreadCount.value = jsonBody;
+      return jsonBody;
     } else {
       throw Exception(
         'Failed to load unread count. Status code: ${response.statusCode}',
+      );
+    }
+  }
+
+  // Clear all notifications via the API
+  Future<void> clearNotifications() async {
+    final String? bearerToken = await refreshAccessToken();
+    const String url = 'https://portal.ahmed-hussain.com/api/patient/notifications/clear';
+
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {
+        'Authorization': 'Bearer $bearerToken',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final jsonBody = json.decode(response.body);
+
+      if (jsonBody['status'] == true) {
+        // Successfully cleared notifications
+        // Reset unread count to 0 and update state
+        unreadCount.value = 0;
+      } else {
+        throw Exception('API Error: ${jsonBody['message']}');
+      }
+    } else {
+      throw Exception(
+        'Failed to clear notifications. Status code: ${response.statusCode}',
       );
     }
   }

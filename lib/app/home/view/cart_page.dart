@@ -7,12 +7,17 @@ import '../controller/shop_controller.dart';
 class CartPage extends StatefulWidget {
   const CartPage({Key? key}) : super(key: key);
 
-  static final List<Map<String, dynamic>> cartItems = [];
+  // Use a reactive list instead of a plain list
+  static final RxList<Map<String, dynamic>> cartItems = <Map<String, dynamic>>[].obs;
 
+  // Add to cart method
   static void addToCart(Map<String, dynamic> product, int quantity) {
     final index = cartItems.indexWhere((item) => item["product"]["id"] == product["id"]);
     if (index >= 0) {
+      // Increase quantity
       cartItems[index]["quantity"] += quantity;
+      // Manually refresh the RxList to update observers
+      cartItems.refresh();
     } else {
       cartItems.add({
         "product": product,
@@ -37,6 +42,7 @@ class _CartPageState extends State<CartPage> {
     double discountTotal = 0.0;
     int totalQuantity = 0;
 
+    // Use the reactive cartItems list
     for (var item in CartPage.cartItems) {
       final product = item["product"] as Map<String, dynamic>;
       final quantity = item["quantity"] as int;
@@ -60,14 +66,16 @@ class _CartPageState extends State<CartPage> {
         children: [
           // Cart list
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: CartPage.cartItems.length,
-              itemBuilder: (context, index) {
-                final item = CartPage.cartItems[index];
-                return _buildCartItem(item);
-              },
-            ),
+            child: Obx(() {
+              return ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: CartPage.cartItems.length,
+                itemBuilder: (context, index) {
+                  final item = CartPage.cartItems[index];
+                  return _buildCartItem(item);
+                },
+              );
+            }),
           ),
           // Summary
           Container(
@@ -208,32 +216,28 @@ class _CartPageState extends State<CartPage> {
               children: [
                 IconButton(
                   onPressed: () {
-                    setState(() {
-                      if (quantity > 1) {
-                        item["quantity"] = quantity - 1;
-                      }
-                    });
+                    if (quantity > 1) {
+                      item["quantity"] = quantity - 1;
+                      CartPage.cartItems.refresh();
+                    }
                   },
                   icon: const Icon(Icons.remove_circle_outline),
                 ),
                 Text("$quantity"),
                 IconButton(
                   onPressed: () {
-                    setState(() {
-                      item["quantity"] = quantity + 1;
-                    });
+                    item["quantity"] = quantity + 1;
+                    CartPage.cartItems.refresh();
                   },
                   icon: const Icon(Icons.add_circle_outline),
                 ),
               ],
             ),
             const SizedBox(width: 8),
-            // Remove
+            // Remove item
             IconButton(
               onPressed: () {
-                setState(() {
-                  CartPage.cartItems.remove(item);
-                });
+                CartPage.cartItems.remove(item);
               },
               icon: const Icon(Icons.close),
             ),
@@ -243,22 +247,18 @@ class _CartPageState extends State<CartPage> {
     );
   }
 
-  /// Calls shopController.storeOrder(...) to send the cart items to the server
   Future<void> _sendOrder() async {
     setState(() => _isSending = true);
 
     final msg = await shopController.storeOrder(CartPage.cartItems);
-    // If msg starts with "Error:" or "Exception:", it's an error
     if (msg.toLowerCase().contains("error") || msg.toLowerCase().contains("exception")) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(msg)),
       );
     } else {
-      // success
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(msg)),
       );
-      // Optionally clear cart
       setState(() {
         CartPage.cartItems.clear();
       });

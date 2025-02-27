@@ -259,8 +259,40 @@ class _ProfilePageState extends State<ProfilePage> {
                     "Delete Account",
                     style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
                   ),
-                  onTap: () {
+                  onTap: () async {
                     // Delete account logic
+                    // Show confirmation dialog before deletion.
+                    bool? confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: const Text("Confirm Deletion"),
+                          content: const Text("Are you sure you want to delete your account? This action cannot be undone."),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                Navigator.of(context).pop(false); // Cancel deletion.
+                              },
+                              child: const Text("Cancel"),
+                            ),
+                            ElevatedButton(
+                              onPressed: () {
+                                Navigator.of(context).pop(true); // Confirm deletion.
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                              ),
+                              child: const Text("Delete"),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+
+                    if (confirm == true) {
+                      await Provider.of<ProfileController>(context, listen: false)
+                          .deleteAccount(context);
+                    }
                   },
                 ),
                 ListTile(
@@ -269,9 +301,9 @@ class _ProfilePageState extends State<ProfilePage> {
                     "Sign Out",
                     style: TextStyle(color: Colors.red),
                   ),
-                  onTap: () {
-                    // Sign out logic
-                  },
+                  onTap: () async {
+                    await Provider.of<ProfileController>(context, listen: false)
+                        .signOut(context);                  },
                 ),
               ],
             ),

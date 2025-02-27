@@ -1,5 +1,5 @@
-// product_detail_page.dart
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'cart_page.dart';
 
 class ProductDetailPage extends StatefulWidget {
@@ -16,34 +16,67 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   @override
   Widget build(BuildContext context) {
     final product = widget.product;
-    final title = product["title"] as String;
-    final imageUrl = product["image"] as String;
-    final price = product["price"] as double;
-    final oldPrice = product["oldPrice"] as double?;
-    final canBuy = product["can_buy"] as bool;
+    final String title = product["title"] as String;
+    final String imageUrl = product["image"] as String;
+    final double price = product["price"] as double;
+    final double? oldPrice = product["oldPrice"] as double?;
+    final bool canBuy = product["can_buy"] as bool;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text("Product Details"),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.shopping_cart),
-            onPressed: () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const CartPage()),
-              );
-              setState(() {});
-            },
-          ),
+          // Reactive cart icon with badge
+          Obx(() {
+            int itemCount = CartPage.cartItems.length;
+            return Stack(
+              alignment: Alignment.topRight,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.shopping_cart),
+                  onPressed: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const CartPage()),
+                    );
+                    setState(() {}); // Refresh state if needed on return
+                  },
+                ),
+                if (itemCount > 0)
+                  Positioned(
+                    right: 8,
+                    top: 8,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 16,
+                        minHeight: 16,
+                      ),
+                      child: Text(
+                        '$itemCount',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          }),
         ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // Image
+            // Product image
             if (imageUrl.isEmpty)
               const SizedBox(
                 width: 200,
@@ -65,16 +98,14 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 },
               ),
             const SizedBox(height: 16),
-
-            // Title
+            // Product title
             Text(
               title,
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
-
-            // Price row
+            // Price row with old price (if any)
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -96,22 +127,19 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               ],
             ),
             const SizedBox(height: 16),
-
-            // "Product Details" label
+            // "Product Details" label and dummy details text
             const Text(
               "Product Details",
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 4),
-            // Show the product title as dummy "details"
             Text(
               title,
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 14),
             ),
             const SizedBox(height: 16),
-
-            // Quantity row
+            // Quantity selector row
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -136,8 +164,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               ],
             ),
             const SizedBox(height: 16),
-
-            // Add to cart button
+            // Add to Cart button
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: canBuy ? Colors.black : Colors.grey,
@@ -148,11 +175,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               ),
               onPressed: canBuy
                   ? () {
+                // Add item to cart with the chosen quantity
                 CartPage.addToCart(product, _quantity);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text("$title added to cart (x$_quantity)"),
-                  ),
+                  SnackBar(content: Text("$title added to cart (x$_quantity)")),
                 );
               }
                   : null,

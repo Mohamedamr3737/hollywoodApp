@@ -89,7 +89,7 @@ class LoginView extends StatelessWidget {
                           alignment: Alignment.centerRight,
                           child: InkWell(
                               onTap: () {
-                                Get.to(() => const PasswordResetPage());
+                                Get.to(() => const UsernameResetPage());
                               },
                               child: "Forget Password ?".text.make()),
                         ),

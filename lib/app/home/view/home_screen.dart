@@ -10,8 +10,6 @@ import './MySessionsPage.dart';
 import 'package:s_medi/app/home/view/mydata.dart';
 import 'package:s_medi/app/home/view/SelectCategoryRequestPage.dart';
 import 'NotificationsPage.dart';
-
-// 1) Import your notifications_controller
 import '../controller/notifications_controller.dart';
 
 class HomePage extends StatefulWidget {
@@ -21,23 +19,14 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-// 2) Convert to State to handle unread count fetching
 class _HomePageState extends State<HomePage> {
-  final NotificationsController _notificationsController = NotificationsController();
-
-  // Future to store unread count
-  late Future<int> _futureUnreadCount;
+  final NotificationsController _notificationsController = Get.find<NotificationsController>();
 
   @override
   void initState() {
     super.initState();
-    // Fetch unread count once the widget is initialized
-    try {
-      _futureUnreadCount = _notificationsController.fetchUnreadCount();
-    } catch (e) {
-      print("Error calling fetchUnreadCount: $e");
-    }
-
+    // Fetch the initial unread count
+    _notificationsController.fetchUnreadCount();
   }
 
   @override
@@ -45,11 +34,8 @@ class _HomePageState extends State<HomePage> {
     final double screenWidth = MediaQuery.of(context).size.width;
     final double screenHeight = MediaQuery.of(context).size.height;
 
-    // 1) Wrap the entire body in a SafeArea so the IconButton is not
-    //    obstructed by the status bar on some devices.
     return Scaffold(
       body: SafeArea(
-        // Everything else remains the same
         child: Column(
           children: [
             Stack(
@@ -59,15 +45,15 @@ class _HomePageState extends State<HomePage> {
                 // Upper background image
                 Image.network(
                   'https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcRElHzS7DF6u04X-Y0OPLE2YkIIcaI6XjbB5K5atLN_ZCPg_Un9',
-                  height: screenHeight * 0.25, // 25% of screen height
+                  height: screenHeight * 0.25,
                   width: double.infinity,
                   fit: BoxFit.cover,
                 ),
                 // Circle profile icon
                 Positioned(
-                  bottom: -screenHeight * 0.06, // Adjust based on screen size
+                  bottom: -screenHeight * 0.06,
                   child: Container(
-                    width: screenWidth * 0.35, // 35% of screen width
+                    width: screenWidth * 0.35,
                     height: screenWidth * 0.35,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
@@ -87,78 +73,64 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ),
-                // Notifications Icon (top-right) with badge
+                // Notifications Icon with reactive badge
                 Positioned(
                   top: 16,
                   right: 16,
-                  child: FutureBuilder<int>(
-                    future: _futureUnreadCount,
-                    builder: (context, snapshot) {
-                      final unreadCount = snapshot.data ?? 0;
-                      print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-                      print(unreadCount);
-                      return Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          IconButton(
-                            icon: const Icon(
-                              Icons.notifications,
-                              color: Colors.white,
-                              size: 30,
-                            ),
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => const NotificationsPage()),
-                              ).then((_) {
-                                // Call your homepage refresh method after returning
-                                setState(() {
-                                  _notificationsController.fetchUnreadCount();
-                                  setState(() {
-
-                                  });
-                                });
-                              });
-                            },
+                  child: Obx(() {
+                    int count = _notificationsController.unreadCount.value;
+                    return Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        IconButton(
+                          icon: const Icon(
+                            Icons.notifications,
+                            color: Colors.white,
+                            size: 30,
                           ),
-                          // If there's an unread count, show a small red badge
-                          if (unreadCount > 0)
-                            Positioned(
-                              right: 0,
-                              top: -2,
-                              child: Container(
-                                padding: const EdgeInsets.all(3),
-                                decoration: BoxDecoration(
-                                  color: Colors.red,
-                                  borderRadius: BorderRadius.circular(10),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const NotificationsPage()),
+                            );
+                          },
+                        ),
+                        if (count > 0)
+                          Positioned(
+                            right: 0,
+                            top: -2,
+                            child: Container(
+                              padding: const EdgeInsets.all(3),
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              constraints: const BoxConstraints(
+                                minWidth: 18,
+                                minHeight: 18,
+                              ),
+                              child: Text(
+                                count.toString(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
                                 ),
-                                constraints: const BoxConstraints(
-                                  minWidth: 18,
-                                  minHeight: 18,
-                                ),
-                                child: Text(
-                                  unreadCount.toString(),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
+                                textAlign: TextAlign.center,
                               ),
                             ),
-                        ],
-                      );
-                    },
-                  ),
+                          ),
+                      ],
+                    );
+                  }),
                 ),
               ],
             ),
-            SizedBox(height: screenHeight * 0.08), // Adjust spacing dynamically
+            SizedBox(height: screenHeight * 0.08),
             // Grid of clickable options
             Expanded(
               child: GridView.count(
                 crossAxisCount: 2,
-                padding: EdgeInsets.all(screenWidth * 0.04), // Scalable padding
+                padding: EdgeInsets.all(screenWidth * 0.04),
                 crossAxisSpacing: screenWidth * 0.04,
                 mainAxisSpacing: screenHeight * 0.03,
                 children: [
@@ -242,12 +214,11 @@ class _HomePageState extends State<HomePage> {
       Widget page,
       double screenWidth,
       ) {
-    double iconSize = screenWidth * 0.3; // 30% of screen width for icons
-    double fontSize = screenWidth * 0.04; // 4% of screen width for text
+    double iconSize = screenWidth * 0.3;
+    double fontSize = screenWidth * 0.04;
 
     return GestureDetector(
       onTap: () {
-        // Navigate to the corresponding page
         Navigator.push(context, MaterialPageRoute(builder: (context) => page));
       },
       child: Column(

@@ -47,19 +47,51 @@ class _ProductsPageState extends State<ProductsPage> {
       appBar: AppBar(
         title: const Text("PRODUCTS"),
         centerTitle: true,
+// products_page.dart (inside the AppBar actions)
         actions: [
-          // Cart icon
-          IconButton(
-            icon: const Icon(Icons.shopping_cart),
-            onPressed: () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const CartPage()),
-              );
-              setState(() {});
-            },
-          ),
+          Obx(() {
+            int itemCount = CartPage.cartItems.length;
+            return Stack(
+              alignment: Alignment.topRight,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.shopping_cart),
+                  onPressed: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const CartPage()),
+                    );
+                  },
+                ),
+                if (itemCount > 0)
+                  Positioned(
+                    right: 8,
+                    top: 8,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 16,
+                        minHeight: 16,
+                      ),
+                      child: Text(
+                        '$itemCount',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          }),
         ],
+
       ),
       body: Column(
         children: [

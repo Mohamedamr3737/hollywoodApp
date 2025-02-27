@@ -4,10 +4,13 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../auth/controller/token_controller.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../auth/view/login_page.dart';
 class ProfileController with ChangeNotifier {
   String apiUrl = "https://portal.ahmed-hussain.com/api/patient/profile/me";
   String updateApiUrl = "https://portal.ahmed-hussain.com/api/patient/profile/update";
+  String logoutApiUrl = "https://portal.ahmed-hussain.com/api/patient/auth/logout";
+  String deleteApiUrl = "https://portal.ahmed-hussain.com/api/patient/auth/delete";
 
   Map<String, dynamic>? userData;
   bool isLoading = true;
@@ -15,10 +18,7 @@ class ProfileController with ChangeNotifier {
 
   Future<void> fetchProfile() async {
     try {
-      if (await isTokenExpired()) {
-        await refreshAccessToken();
-      }
-      String? token = await getAccessToken();
+      String? token = await refreshAccessToken();
 
       final response = await http.get(
         Uri.parse(apiUrl),
@@ -105,6 +105,7 @@ class ProfileController with ChangeNotifier {
         );
       }
     } catch (e) {
+      print(e);
       errorMessage = "An error occurred: $e";
 
       Get.snackbar(
@@ -116,6 +117,133 @@ class ProfileController with ChangeNotifier {
       );
     }
     notifyListeners(); // Ensure UI refreshes after update
+  }
+
+  /// New function to sign out the user.
+  Future<void> signOut(BuildContext context) async {
+    try {
+      // Get the current access token.
+      String? token = await getAccessToken();
+      if (token == null) {
+        Get.snackbar(
+          "Error",
+          "No token found. Already signed out?",
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
+      }
+
+      final response = await http.post(
+        Uri.parse(logoutApiUrl),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        // Clear the token from SharedPreferences.
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove("access_token");
+
+        // Optionally, you can also clear user data.
+        userData = null;
+        notifyListeners();
+
+        Get.snackbar(
+          "Success",
+          "Signed out successfully",
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+
+        Get.offAll(() => const LoginView());
+
+      } else {
+        Get.snackbar(
+          "Error",
+          "Sign out failed: ${response.statusCode}",
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        "Error",
+        "An error occurred: $e",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+
+  /// New function to delete the user's account.
+  Future<void> deleteAccount(BuildContext context) async {
+    try {
+      // Retrieve the current access token.
+      String? token = await getAccessToken();
+      if (token == null) {
+        Get.snackbar(
+          "Error",
+          "No token found. You may already be signed out.",
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
+      }
+
+      final response = await http.post(
+        Uri.parse(deleteApiUrl),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      final jsonResponse = json.decode(response.body);
+      if (response.statusCode == 200 && jsonResponse["status"] == true) {
+        // Clear the token from SharedPreferences.
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove("access_token");
+
+        // Optionally, clear user data.
+        userData = null;
+        notifyListeners();
+
+        Get.snackbar(
+          "Success",
+          "Account deleted successfully",
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        // Navigate to login page.
+        Get.offAll(() => LoginView());
+      } else {
+        String errorMsg = jsonResponse["message"] ?? "Failed to delete account.";
+        Get.snackbar(
+          "Error",
+          errorMsg,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        "Error",
+        "An error occurred: $e",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
   }
 
 }
