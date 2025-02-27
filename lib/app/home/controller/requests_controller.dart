@@ -7,7 +7,7 @@ import '../../auth/controller/token_controller.dart';
 class RequestsController {
   // GET /api/patient/my-requests/categories
   Future<List<dynamic>> fetchCategories() async {
-    final bearerToken = await refreshAccessToken();
+    final bearerToken = await getAccessToken();
     final url = "https://portal.ahmed-hussain.com/api/patient/my-requests/categories";
 
     final response = await http.get(
@@ -31,7 +31,7 @@ class RequestsController {
 
   // GET /api/patient/my-requests/list?type=<typeId>
   Future<List<dynamic>> fetchMyRequests(int typeId) async {
-    final bearerToken = await refreshAccessToken();
+    final bearerToken = await getAccessToken();
     final url = "https://portal.ahmed-hussain.com/api/patient/my-requests/list?type=$typeId";
 
     final response = await http.get(
@@ -58,7 +58,7 @@ class RequestsController {
     required String commentText,
     String? filePath,
   }) async {
-    final bearerToken = await refreshAccessToken();
+    final bearerToken = await getAccessToken();
     final url = "https://portal.ahmed-hussain.com/api/patient/my-requests/comment/create";
 
     // Create a multipart request
@@ -100,7 +100,7 @@ class RequestsController {
   // POST /api/patient/my-requests/close
   // Body: { "ticket_id": <int> }
   Future<Map<String, dynamic>> closeTicket(int ticketId) async {
-    final bearerToken = await refreshAccessToken();
+    final bearerToken = await getAccessToken();
     final url = "https://portal.ahmed-hussain.com/api/patient/my-requests/close";
 
     final response = await http.post(
@@ -133,7 +133,7 @@ class RequestsController {
     required String description,
     List<String>? filePaths, // optional
   }) async {
-    final bearerToken = await refreshAccessToken();
+    final bearerToken = await getAccessToken();
     final url = "https://portal.ahmed-hussain.com/api/patient/my-requests/create";
 
     // We'll use a MultipartRequest for file uploads

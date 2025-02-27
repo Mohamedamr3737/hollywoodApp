@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controller/session_controller.dart';
 import 'sessionByRegionPage.dart';
+import '../../../auth/controller/token_controller.dart';
 
 class MySessionsPage extends StatelessWidget {
   const MySessionsPage({super.key});
@@ -9,6 +10,7 @@ class MySessionsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Ensure the controller is initialized properly
+    checkLoginStatus();
     final SessionController sessionController = Get.put(SessionController());
 
     // Explicitly call fetchSessions() in case onInit is not called

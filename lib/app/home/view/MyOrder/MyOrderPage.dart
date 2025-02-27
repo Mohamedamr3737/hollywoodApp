@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controller/orders_controller.dart';
 import 'OrderDetailsPage.dart';
+import '../../../auth/controller/token_controller.dart';
 
 class MyOrdersPage extends StatefulWidget {
   const MyOrdersPage({Key? key}) : super(key: key);
@@ -17,6 +18,7 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
 
   @override
   void initState() {
+    checkLoginStatus();
     super.initState();
     // Fetch orders from the server
     ordersController.fetchOrders();

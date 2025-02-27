@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'MedicationTab.dart';
 import 'DietTab.dart';
+import '../../../auth/controller/token_controller.dart';
 
 class PrescriptionPage extends StatefulWidget {
   const PrescriptionPage({super.key});
@@ -16,6 +17,7 @@ class _PrescriptionPageState extends State<PrescriptionPage>
 
   @override
   void initState() {
+    checkLoginStatus();
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() {

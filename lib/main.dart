@@ -37,14 +37,13 @@ class _MyAppState extends State<MyApp> {
   var isLogin = false;
 
   checkIfLogin() async {
-      if (await refreshAccessToken()!=null) {
+      if (await getAccessToken()!=null) {
         setState(() {
           isLogin = true;
         });
-      }else{
-        await refreshAccessToken();
+      }else {
         setState(() {
-          isLogin = true;
+          isLogin = false;
         });      }
   }
 

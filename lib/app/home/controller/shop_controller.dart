@@ -107,7 +107,7 @@ class ShopController extends GetxController {
   /// Each category is { "id": <int>, "title": <String> }
   Future<void> fetchCategories() async {
     try {
-      final bearerToken = await refreshAccessToken();
+      final bearerToken = await getAccessToken();
       final url = "https://portal.ahmed-hussain.com/api/patient/shop/categories";
       final response = await http.get(
         Uri.parse(url),
@@ -144,7 +144,7 @@ class ShopController extends GetxController {
       errorMessage('');
 
       // 1) Get the bearer token
-      final bearerToken = await refreshAccessToken();
+      final bearerToken = await getAccessToken();
 
       // 2) Build the "products" array
       final List<Map<String, dynamic>> productList = cartItems.map((item) {

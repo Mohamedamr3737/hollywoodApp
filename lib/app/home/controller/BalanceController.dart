@@ -20,7 +20,7 @@ class BalanceController extends GetxController {
       errorMessage('');
 
       // 1) Get bearer token from your token controller
-      String? bearerToken = await refreshAccessToken();
+      String? bearerToken = await getAccessToken();
 
       // 2) Build the request
       final url = "https://portal.ahmed-hussain.com/api/patient/payment/purchases";

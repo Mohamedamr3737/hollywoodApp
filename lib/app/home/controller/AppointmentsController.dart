@@ -14,7 +14,7 @@ class AppointmentsController extends GetxController {
 
   /// Fetch the list of appointments from the API.
   Future<List<Map<String, String>>> fetchAppointments() async {
-    String? bearerToken = await refreshAccessToken();
+    String? bearerToken = await getAccessToken();
     final response = await http.get(
       Uri.parse(apiUrl),
       headers: {
@@ -47,7 +47,7 @@ class AppointmentsController extends GetxController {
       isLoading(true);
       errorMessage('');
       final formattedDate = date.replaceAll('-', '/');
-      var bearerToken = await refreshAccessToken();
+      var bearerToken = await getAccessToken();
       final url =
           "https://portal.ahmed-hussain.com/api/patient/appointments/setting?date=$formattedDate";
       final response = await http.get(
@@ -90,7 +90,7 @@ class AppointmentsController extends GetxController {
   }) async {
     try {
       isLoading(true);
-      var bearerToken = await refreshAccessToken();
+      var bearerToken = await getAccessToken();
       final formattedDate = date.replaceAll('-', '/');
       final url =
           "https://portal.ahmed-hussain.com/api/patient/appointments/store";
@@ -132,7 +132,7 @@ class AppointmentsController extends GetxController {
   Future<bool> cancelAppointment({required int id}) async {
     try {
       isLoading(true);
-      final bearerToken = await refreshAccessToken();
+      final bearerToken = await getAccessToken();
       final url = "https://portal.ahmed-hussain.com/api/patient/appointments/cancel";
       final body = json.encode({"id": id});
       final response = await http.post(

@@ -5,7 +5,7 @@ import '../../auth/controller/token_controller.dart';
 
 class MedicationController {
   Future<List<dynamic>> fetchMyPrescriptions() async {
-    final bearerToken = await refreshAccessToken();
+    final bearerToken = await getAccessToken();
     final url = "https://portal.ahmed-hussain.com/api/patient/prescription/my-prescription";
 
     final response = await http.get(

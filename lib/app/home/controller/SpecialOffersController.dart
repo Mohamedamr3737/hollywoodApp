@@ -5,7 +5,7 @@ import '../../auth/controller/token_controller.dart';
 class SpecialOffersController {
   /// Fetches the special offers HTML content from the API.
   Future<String> fetchOffers() async {
-    String? bearerToken= await refreshAccessToken();
+    String? bearerToken= await getAccessToken();
     const String url = 'https://portal.ahmed-hussain.com/api/patient/offers';
     final response = await http.get(Uri.parse(url),
       headers: {

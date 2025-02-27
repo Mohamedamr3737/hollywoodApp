@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../auth/controller/token_controller.dart';
 
 class MyAppointmentsPage extends StatelessWidget {
   final List<Map<String, String>> appointments;
@@ -12,6 +13,7 @@ class MyAppointmentsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    checkLoginStatus();
     if (appointments.isEmpty) {
       return Center(
         child: Column(

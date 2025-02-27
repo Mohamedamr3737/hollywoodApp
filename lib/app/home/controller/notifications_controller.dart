@@ -33,7 +33,7 @@ class NotificationsController extends GetxController {
 
   // Fetch notifications as before
   Future<List<NotificationItem>> fetchNotifications() async {
-    final String? bearerToken = await refreshAccessToken();
+    final String? bearerToken = await getAccessToken();
     const String url = 'https://portal.ahmed-hussain.com/api/patient/notifications/list';
 
     final response = await http.get(
@@ -74,7 +74,7 @@ class NotificationsController extends GetxController {
   // Mark a single notification as read
   Future<void> markAsRead(int notificationId) async {
     print(notificationId);
-    final String? bearerToken = await refreshAccessToken();
+    final String? bearerToken = await getAccessToken();
     final String url =
         'https://portal.ahmed-hussain.com/api/patient/notifications/read?notification_id=$notificationId';
 
@@ -134,7 +134,7 @@ class NotificationsController extends GetxController {
 
   // Clear all notifications via the API
   Future<void> clearNotifications() async {
-    final String? bearerToken = await refreshAccessToken();
+    final String? bearerToken = await getAccessToken();
     const String url = 'https://portal.ahmed-hussain.com/api/patient/notifications/clear';
 
     final response = await http.post(

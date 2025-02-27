@@ -27,37 +27,51 @@ Future<String?> getAccessToken() async {
   return prefs.getString('access_token'); // Retrieve the stored token
 }
 
-Future<String?> refreshAccessToken() async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  String? access_token = prefs.getString('access_token'); // Retrieve the stored token
-
-  // Make the request to refresh the access token
-  var response = await http.post(
-    Uri.parse(
-        'https://portal.ahmed-hussain.com/api/patient/auth/refresh'), // Replace with your API endpoint
-    headers: {
-      'Authorization':
-          'Bearer $access_token', // Add the Bearer token to the header
-      'Accept': 'application/json',
-    },
-  );
-
-  if (response.statusCode == 200) {
-    var responseData = jsonDecode(response.body);
-    String newAccessToken = responseData['access_token'];
-    // int expiresIn = responseData['expires_in'];
-
-    // Store the new access token and expiration time
-    await storeTokens(newAccessToken);
-
-    print("Access token refreshed successfully.");
-    return newAccessToken; // Return the new access token
-  } else {
-    print('Failed to refresh access token: ${response.body}');
-    // return null; // Token refresh failed
+void checkLoginStatus() async {
+  if (await getAccessToken() == null) {
     Get.offAll(() => const LoginView());
   }
-
-  Get.offAll(() => const LoginView());
-  return null;
 }
+
+Future<bool> checkLoginStatusBool() async {
+  if (await getAccessToken() == null) {
+    return false;
+  }else{
+    return true;
+  }
+}
+
+// Future<String?> refreshAccessToken() async {
+//   SharedPreferences prefs = await SharedPreferences.getInstance();
+//   String? access_token = prefs.getString('access_token'); // Retrieve the stored token
+//
+//   // Make the request to refresh the access token
+//   var response = await http.post(
+//     Uri.parse(
+//         'https://portal.ahmed-hussain.com/api/patient/auth/refresh'), // Replace with your API endpoint
+//     headers: {
+//       'Authorization':
+//           'Bearer $access_token', // Add the Bearer token to the header
+//       'Accept': 'application/json',
+//     },
+//   );
+//
+//   if (response.statusCode == 200) {
+//     var responseData = jsonDecode(response.body);
+//     String newAccessToken = responseData['access_token'];
+//     // int expiresIn = responseData['expires_in'];
+//
+//     // Store the new access token and expiration time
+//     await storeTokens(newAccessToken);
+//
+//     print("Access token refreshed successfully.");
+//     return newAccessToken; // Return the new access token
+//   } else {
+//     print('Failed to refresh access token: ${response.body}');
+//     // return null; // Token refresh failed
+//     Get.offAll(() => const LoginView());
+//   }
+//
+//   Get.offAll(() => const LoginView());
+//   return null;
+// }

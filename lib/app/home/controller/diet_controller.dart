@@ -7,7 +7,7 @@ class DietController {
 
   // 1) Fetch the list of diet plans
   Future<List<dynamic>> fetchDietPlans() async {
-    final bearerToken = await refreshAccessToken();
+    final bearerToken = await getAccessToken();
     final url = "https://portal.ahmed-hussain.com/api/patient/prescription/diet-list";
 
     final response = await http.get(

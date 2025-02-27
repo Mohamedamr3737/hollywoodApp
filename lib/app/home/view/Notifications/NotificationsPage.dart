@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../controller/notifications_controller.dart';
 import 'package:get/get.dart';
+import '../../../auth/controller/token_controller.dart';
 
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({Key? key}) : super(key: key);
@@ -12,13 +13,27 @@ class NotificationsPage extends StatefulWidget {
 
 class _NotificationsPageState extends State<NotificationsPage> {
   final NotificationsController _controller = Get.find<NotificationsController>();
-  late Future<List<NotificationItem>> _futureNotifications;
+  Future<List<NotificationItem>>? _futureNotifications;
 
   @override
   void initState() {
     super.initState();
-    _futureNotifications = _controller.fetchNotifications();
+    // _futureNotifications = _controller.fetchNotifications();
+    checkLoginStatus();
+    checkLoginAndFetchNotifications();
   }
+
+  void checkLoginAndFetchNotifications() async {
+
+    if (await getAccessToken() != null) {
+      setState(() {
+        _controller.fetchUnreadCount();
+        _futureNotifications = _controller.fetchNotifications();
+      });
+
+    }
+  }
+
 
   /// Marks a notification as read and then refetches notifications
   Future<void> _onNotificationTap(NotificationItem notification) async {

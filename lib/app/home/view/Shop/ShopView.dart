@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import '../../controller/shop_controller.dart';
 import 'cart_page.dart';
 import 'product_detail_page.dart';
+import '../../../auth/controller/token_controller.dart';
 
 class ProductsPage extends StatefulWidget {
   const ProductsPage({Key? key}) : super(key: key);
@@ -28,6 +29,7 @@ class _ProductsPageState extends State<ProductsPage> {
 
   @override
   void initState() {
+    checkLoginStatus();
     super.initState();
     // Fetch initial products page=1
     shopController.fetchProducts(page: 1);
@@ -43,6 +45,7 @@ class _ProductsPageState extends State<ProductsPage> {
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("PRODUCTS"),

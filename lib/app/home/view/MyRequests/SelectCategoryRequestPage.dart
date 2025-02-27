@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import '../../controller/requests_controller.dart';
 import 'request.dart'; // MyRequestsPage
+import '../../../auth/controller/token_controller.dart';
 
 class SelectCategoryPage extends StatefulWidget {
   const SelectCategoryPage({Key? key}) : super(key: key);
@@ -16,6 +17,7 @@ class _SelectCategoryPageState extends State<SelectCategoryPage> {
 
   @override
   void initState() {
+    checkLoginStatus();
     super.initState();
     // Fetch the categories when the page is created
     _futureCategories = _requestsController.fetchCategories();

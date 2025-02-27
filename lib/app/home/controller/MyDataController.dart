@@ -88,7 +88,7 @@ class Category {
 class MyDataController {
 
   Future<List<Category>> fetchCategories() async {
-    String? token= await refreshAccessToken();
+    String? token= await getAccessToken();
     const String apiUrl =
         'https://portal.ahmed-hussain.com/api/patient/my-data/categories';
 

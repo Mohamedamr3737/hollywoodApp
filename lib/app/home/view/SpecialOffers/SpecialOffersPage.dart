@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import '../../controller/SpecialOffersController.dart';
+import '../../../auth/controller/token_controller.dart';
 
 class SpecialOffersPage extends StatefulWidget {
   const SpecialOffersPage({super.key});
@@ -17,6 +18,7 @@ class _SpecialOffersPageState extends State<SpecialOffersPage> {
 
   @override
   void initState() {
+    checkLoginStatus();
     super.initState();
     _futureHtmlContent = _controller.fetchOffers();
   }

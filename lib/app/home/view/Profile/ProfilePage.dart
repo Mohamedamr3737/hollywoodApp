@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../controller/profile_controller.dart';
 import 'package:get/get.dart';
-
+import '../../../auth/controller/token_controller.dart';
+import '../../../auth/view/login_page.dart';
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
-
   @override
   _ProfilePageState createState() => _ProfilePageState();
 }
@@ -28,10 +28,12 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   void initState() {
+    checkLoginStatus();
     super.initState();
     Future.microtask(() =>
         Provider.of<ProfileController>(context, listen: false).fetchProfile());
   }
+
 
   void updateProfile() async {
     final profileController =

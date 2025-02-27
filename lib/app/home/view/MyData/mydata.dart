@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../../controller/MyDataController.dart';
 import 'MydataDetailspage.dart';
+import '../../../auth/controller/token_controller.dart';
+
 /// -----------------------------------------
 /// MyDataPage displays background, a logo and the list of categories
 /// -----------------------------------------
@@ -11,6 +13,7 @@ class MyDataPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    checkLoginStatus();
     final MyDataController controller = MyDataController();
 
     return Scaffold(

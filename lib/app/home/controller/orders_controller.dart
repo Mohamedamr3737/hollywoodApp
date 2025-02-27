@@ -36,7 +36,7 @@ class OrdersController extends GetxController {
       isLoading(true);
       errorMessage('');
 
-      final bearerToken = await refreshAccessToken();
+      final bearerToken = await getAccessToken();
       final url = "https://portal.ahmed-hussain.com/api/patient/shop/orders";
 
       final response = await http.get(

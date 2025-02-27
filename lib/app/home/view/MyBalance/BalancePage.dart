@@ -4,11 +4,12 @@ import '../../controller/BalanceController.dart';
 import 'summarytabbalance.dart';
 import 'PurshaseTabBalance.dart';
 import 'paymentstabbalance.dart';
+import '../../../auth/controller/token_controller.dart';
 
 class MyBalancePage extends StatefulWidget {
-
   @override
   State<MyBalancePage> createState() => _MyBalancePageState();
+
 }
 
 class _MyBalancePageState extends State<MyBalancePage>
@@ -20,7 +21,10 @@ class _MyBalancePageState extends State<MyBalancePage>
 
   @override
   void initState() {
+    checkLoginStatus();
+
     super.initState();
+
     _tabController = TabController(length: 3, vsync: this);
 
     // Fetch the purchases once the page initializes

@@ -18,7 +18,7 @@ class ProfileController with ChangeNotifier {
 
   Future<void> fetchProfile() async {
     try {
-      String? token = await refreshAccessToken();
+      String? token = await getAccessToken();
 
       final response = await http.get(
         Uri.parse(apiUrl),

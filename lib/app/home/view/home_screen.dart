@@ -11,6 +11,7 @@ import 'package:s_medi/app/home/view/MyData/mydata.dart';
 import 'package:s_medi/app/home/view/MyRequests/SelectCategoryRequestPage.dart';
 import 'Notifications/NotificationsPage.dart';
 import '../controller/notifications_controller.dart';
+import '../../auth/controller/token_controller.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -24,10 +25,18 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void initState() {
+
     super.initState();
     // Fetch the initial unread count
-    _notificationsController.fetchUnreadCount();
+    checkLoginAndFetchNotifications();
   }
+
+  void checkLoginAndFetchNotifications() async {
+    if (await getAccessToken() != null) {
+      _notificationsController.fetchUnreadCount();
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
